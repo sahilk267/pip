@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+dev.db
+.env
+backend/dev.db
+backend/tests/.pytest.db
+backend/*.pyc
+*.log
+*.sqlite3

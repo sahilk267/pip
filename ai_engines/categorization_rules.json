@@ -1,0 +1,46 @@
+{
+  "vendor_rules": [
+    {
+      "keywords": ["software", "saas", "cloud", "api", "data platform"],
+      "category": "technology",
+      "confidence": 0.72
+    },
+    {
+      "keywords": ["metal", "steel", "iron", "fabrication", "foundry"],
+      "category": "industrial_metals",
+      "confidence": 0.68
+    },
+    {
+      "keywords": ["food", "beverage", "grocery", "dairy", "spice"],
+      "category": "food_beverage",
+      "confidence": 0.65
+    },
+    {
+      "keywords": ["logistics", "freight", "shipping", "cargo", "warehouse"],
+      "category": "logistics",
+      "confidence": 0.66
+    },
+    {
+      "keywords": ["chemical", "pharma", "laboratory", "reagent"],
+      "category": "chemicals_life_sciences",
+      "confidence": 0.7
+    }
+  ],
+  "product_rules": [
+    {
+      "keywords": ["thermal", "heat sink", "cooling module"],
+      "category": "thermal_systems",
+      "confidence": 0.71
+    },
+    {
+      "keywords": ["sensor", "actuator", "plc", "controller"],
+      "category": "automation_components",
+      "confidence": 0.69
+    },
+    {
+      "keywords": ["bolt", "fastener", "fitting", "valve"],
+      "category": "industrial_hardware",
+      "confidence": 0.64
+    }
+  ]
+}

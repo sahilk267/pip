@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PIP — Category overrides</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; background: #0f1419; color: #e7ecf1; }
+    body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; font-weight: 600; }
+    label { display: block; font-size: 0.85rem; color: #9aacbc; margin-top: 1rem; }
+    input, select, button, textarea { width: 100%; margin-top: 0.35rem; padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid #324252; background: #1a232e; color: inherit; box-sizing: border-box; }
+    button { cursor: pointer; background: #2e6bdc; border-color: #2e6bdc; font-weight: 600; margin-top: 1.25rem; }
+    button:hover { filter: brightness(1.08); }
+    .row { display: grid; gap: 0.75rem; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+    pre { background: #1a232e; padding: 1rem; border-radius: 6px; overflow: auto; font-size: 0.8rem; white-space: pre-wrap; }
+    .muted { color: #9aacbc; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Admin — vendor / product categorization</h1>
+  <p class="muted">Overrides set <code>categorization_source</code> to <code>admin</code> and confidence to 1.0. Ensure the API is reachable (same origin or CORS).</p>
+
+  <label>Entity type
+    <select id="entityType">
+      <option value="vendor">Vendor</option>
+      <option value="product">Product</option>
+    </select>
+  </label>
+
+  <div class="row">
+    <label>ID <input id="entityId" type="number" min="1" placeholder="e.g. 1" /></label>
+    <label>API base (optional) <input id="apiBase" type="text" placeholder="http://127.0.0.1:8000" /></label>
+  </div>
+
+  <label>New category <input id="category" type="text" placeholder="e.g. technology" /></label>
+  <label>Notes (optional) <textarea id="notes" rows="2" placeholder="Reason for override"></textarea></label>
+  <label>Performed by <input id="performedBy" type="text" value="admin" /></label>
+
+  <button type="button" id="submitBtn">Apply override</button>
+  <h2 class="muted" style="margin-top:2rem;font-size:1rem;">Response</h2>
+  <pre id="out">—</pre>
+
+  <script>
+    function baseUrl() {
+      const b = document.getElementById('apiBase').value.trim();
+      return b || `${location.protocol}//${location.host}`;
+    }
+    document.getElementById('submitBtn').onclick = async () => {
+      const type = document.getElementById('entityType').value;
+      const id = document.getElementById('entityId').value;
+      const category = document.getElementById('category').value.trim();
+      const notes = document.getElementById('notes').value.trim() || null;
+      const performed_by = document.getElementById('performedBy').value.trim() || 'admin';
+      const out = document.getElementById('out');
+      if (!id || !category) {
+        out.textContent = 'ID and category are required.';
+        return;
+      }
+      const path = type === 'vendor'
+        ? `/api/v1/admin/vendors/${id}/category`
+        : `/api/v1/admin/products/${id}/category`;
+      try {
+        const res = await fetch(baseUrl() + path, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category, notes, performed_by }),
+        });
+        const body = await res.json().catch(() => ({}));
+        out.textContent = JSON.stringify({ status: res.status, body }, null, 2);
+      } catch (e) {
+        out.textContent = String(e);
+      }
+    };
+  </script>
+</body>
+</html>

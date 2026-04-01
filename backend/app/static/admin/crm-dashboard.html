@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PIP — CRM dashboard</title>
+  <style>
+    :root { font-family: Georgia, serif; background: #f4f0e8; color: #1c1b18; }
+    body { max-width: 880px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.35rem; }
+    section { margin-top: 1.5rem; }
+    h2 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    pre { background: #fff; border: 1px solid #c9c2b8; padding: 1rem; border-radius: 4px; overflow: auto; font-size: 0.85rem; }
+    .muted { color: #5c574e; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>CRM snapshot</h1>
+  <p class="muted">Loads <code>/api/v1/crm/dashboard</code>. Set API base if needed.</p>
+  <label>API base <input id="apiBase" type="text" style="width:100%;max-width:420px" placeholder="http://127.0.0.1:8000" /></label>
+  <section>
+    <button type="button" id="loadBtn">Refresh</button>
+    <h2>Payload</h2>
+    <pre id="out">—</pre>
+  </section>
+  <script>
+    function baseUrl() {
+      const b = document.getElementById('apiBase').value.trim();
+      return b || `${location.protocol}//${location.host}`;
+    }
+    async function load() {
+      const out = document.getElementById('out');
+      try {
+        const res = await fetch(baseUrl() + '/api/v1/crm/dashboard');
+        const body = await res.json();
+        out.textContent = JSON.stringify({ status: res.status, body }, null, 2);
+      } catch (e) {
+        out.textContent = String(e);
+      }
+    }
+    document.getElementById('loadBtn').onclick = load;
+    load();
+  </script>
+</body>
+</html>
