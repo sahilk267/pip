@@ -720,6 +720,164 @@ class OrderDealFeedbackSummary(BaseModel):
     by_actor_type: dict[str, int]
 
 
+class SelfLearningFeedbackRequest(BaseModel):
+    entity_type: str = Field(default='order', min_length=2, max_length=64)
+    entity_id: Optional[int] = Field(default=None, ge=1)
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    outcome: Optional[str] = Field(default=None, max_length=256)
+    comments: Optional[str] = Field(default=None, max_length=2000)
+    performed_by: str = Field(default='system', max_length=128)
+
+
+class SelfLearningFeedbackResponse(BaseModel):
+    entity_type: str
+    entity_id: Optional[int] = None
+    rating: Optional[int] = None
+    outcome: Optional[str] = None
+    comments: Optional[str] = None
+    recorded_at: datetime
+
+
+class ExplainabilityResponse(BaseModel):
+    model_name: str
+    entity_type: str
+    entity_id: int
+    explanation: str
+    features: dict[str, Any]
+    confidence: float
+    generated_at: datetime
+
+
+class ModelDriftStatusResponse(BaseModel):
+    model_name: str
+    window_days: int
+    total_models: int
+    recent_models: int
+    recent_feedback_events: int
+    drift_score: float
+    retrain_recommended: bool
+
+
+class HumanOverrideRequest(BaseModel):
+    action: str = Field(..., min_length=4, max_length=8)
+    reason: Optional[str] = Field(default=None, max_length=2000)
+    performed_by: str = Field(default='ops', max_length=128)
+
+
+class HumanOverrideStatusResponse(BaseModel):
+    override_enabled: bool
+    reason: Optional[str] = None
+    performed_by: str
+    updated_at: Optional[datetime] = None
+
+
+class FraudRiskResponse(BaseModel):
+    order_id: Optional[int] = None
+    source_channel: Optional[str] = None
+    total_amount: float
+    risk_score: float
+    risk_level: str
+    reasons: list[str]
+
+
+class InventoryForecastResponse(BaseModel):
+    sku: str
+    forecast_days: int
+    average_daily_demand: float
+    forecast_units: int
+    recent_units: int
+    unit_counts: dict[str, int]
+
+
+class RecommendationItem(BaseModel):
+    product_name: str
+    sku: str
+    reason: str
+    confidence: float
+
+
+class PersonalizedRecommendationsResponse(BaseModel):
+    lead_id: Optional[int] = None
+    customer_id: Optional[int] = None
+    source: str
+    recommendations: list[RecommendationItem]
+
+
+class EthicsReviewResponse(BaseModel):
+    scope: str
+    region: Optional[str] = None
+    review_status: str
+    issues_identified: list[str]
+    compliance_score: float
+    reviewed_at: datetime
+
+
+class CompetitorPriceRecord(BaseModel):
+    competitor: str
+    product: str
+    observed_price: float
+    outcome_count: int
+    last_seen_at: datetime
+
+
+class CompetitorMonitoringResponse(BaseModel):
+    product_name: Optional[str] = None
+    records: list[CompetitorPriceRecord]
+    monitored_at: datetime
+
+
+class DynamicPricingResponse(BaseModel):
+    sku: Optional[str] = None
+    base_price: float
+    recommended_price: float
+    demand_factor: float
+    pricing_strategy: str
+
+
+class FraudFeedbackRequest(BaseModel):
+    order_id: int = Field(..., ge=1)
+    feedback: str = Field(..., min_length=5, max_length=2000)
+    severity: str = Field(default='medium', min_length=4, max_length=16)
+    performed_by: str = Field(default='audit', max_length=128)
+
+
+class FraudFeedbackResponse(BaseModel):
+    order_id: int
+    feedback: str
+    severity: str
+    recorded_at: datetime
+
+
+class BiasFairnessResponse(BaseModel):
+    model_name: str
+    fairness_score: float
+    bias_issues: list[str]
+    remediation_recommendation: str
+
+
+class SalesProcessEnforcementResponse(BaseModel):
+    sales_rep_id: Optional[int] = None
+    entity_type: Optional[str] = None
+    entity_id: Optional[int] = None
+    compliance_issues: list[str]
+    recommended_actions: list[str]
+    evaluated_at: datetime
+
+
+class ChatbotEscalationRequest(BaseModel):
+    issue_description: str = Field(..., min_length=5, max_length=2000)
+    fallback_channel: str = Field(default='human_agent', min_length=2, max_length=64)
+    performed_by: str = Field(default='chatbot', max_length=128)
+
+
+class ChatbotEscalationResponse(BaseModel):
+    alert_id: int
+    status: str
+    fallback_channel: str
+    performed_by: str
+    created_at: datetime
+
+
 class B2CCartItemInput(BaseModel):
     sku: str = Field(..., min_length=1, max_length=128)
     name: str = Field(..., min_length=1, max_length=256)
@@ -1843,6 +2001,336 @@ class MarketIntelligenceSummaryResponse(BaseModel):
     high_priority: int
     average_score: float
     top_regions: dict[str, int]
+
+
+class ABTestCampaignRequest(BaseModel):
+    name: str = Field(..., min_length=3, max_length=256)
+    description: Optional[str] = Field(default=None, max_length=1024)
+    target_segment: str = Field(default='all', max_length=128)
+    variants: dict[str, Any] = Field(default_factory=dict)
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    status: str = Field(default='draft', min_length=4, max_length=32)
+
+
+class ABTestCampaignResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    target_segment: str
+    variants: dict[str, Any]
+    start_date: datetime
+    end_date: Optional[datetime] = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class ABTestResultRequest(BaseModel):
+    campaign_id: int
+    lead_id: Optional[int] = None
+    variant: str = Field(..., min_length=1, max_length=64)
+    outcome: str = Field(..., min_length=3, max_length=32)
+    value: Optional[float] = None
+    metadata: Optional[dict[str, Any]] = Field(default_factory=dict)
+
+
+class ABTestResultResponse(BaseModel):
+    id: int
+    campaign_id: int
+    lead_id: Optional[int] = None
+    variant: str
+    outcome: str
+    value: Optional[float] = None
+    result_metadata: dict[str, Any]
+    created_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class LeadScoreUpdateRequest(BaseModel):
+    lead_id: int
+    score: int = Field(..., ge=0, le=100)
+    source: str = Field(default='autoscoring', max_length=64)
+    notes: Optional[str] = Field(default=None, max_length=512)
+
+
+class LeadScoreUpdateResponse(BaseModel):
+    lead_id: int
+    old_score: int
+    new_score: int
+    source: str
+    notes: Optional[str] = None
+    updated_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class ConsentRecordRequest(BaseModel):
+    lead_id: int
+    consent_type: str = Field(default='email', min_length=3, max_length=32)
+    status: str = Field(default='granted', min_length=7, max_length=32)
+    source: str = Field(default='system', max_length=64)
+    region: str = Field(default='GLOBAL', max_length=32)
+    policy_version: str = Field(default='1.0', max_length=32)
+    notes: Optional[str] = Field(default=None, max_length=512)
+
+
+class ConsentRecordResponse(BaseModel):
+    id: int
+    lead_id: int
+    consent_type: str
+    status: str
+    granted_at: datetime
+    revoked_at: Optional[datetime] = None
+    source: str
+    region: str
+    policy_version: str
+    notes: Optional[str] = None
+    updated_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class ConsentStatusResponse(BaseModel):
+    lead_id: int
+    consented: bool
+    active: bool
+    last_update: Optional[datetime] = None
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class PaidAPIDataSourceRequest(BaseModel):
+    name: str = Field(..., min_length=3, max_length=256)
+    endpoint: str = Field(..., min_length=8, max_length=512)
+    api_key: str = Field(..., min_length=8, max_length=512)
+    active: bool = True
+    polling_interval_minutes: int = Field(default=60, ge=1, le=1440)
+    source_metadata: Optional[dict[str, Any]] = Field(default_factory=dict)
+
+
+class PaidAPIDataSourceResponse(BaseModel):
+    id: int
+    name: str
+    endpoint: str
+    active: bool
+    polling_interval_minutes: int
+    source_metadata: dict[str, Any]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class PaidAPIIngestionResponse(BaseModel):
+    source_id: int
+    fetched_at: datetime
+    events_fetched: int
+    opportunities_created: int
+    alerts_created: int
+    details: Optional[str] = None
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class CampaignFatigueRequest(BaseModel):
+    campaign_id: int | None = None
+    lead_id: int
+    increment_by: int = Field(default=1, ge=1)
+    notes: Optional[str] = None
+
+
+class CampaignFatigueResponse(BaseModel):
+    id: int
+    campaign_id: Optional[int] = None
+    lead_id: int
+    outreach_count: int
+    last_outreach_at: datetime
+    status: str
+    fatigue_metadata: dict[str, Any]
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class FeedbackLoopRecordRequest(BaseModel):
+    campaign_id: int | None = None
+    lead_id: int | None = None
+    event_type: str = Field(..., min_length=3, max_length=64)
+    event_value: Optional[float] = None
+    event_details: Optional[str] = None
+
+
+class FeedbackLoopRecordResponse(BaseModel):
+    id: int
+    campaign_id: Optional[int] = None
+    lead_id: Optional[int] = None
+    event_type: str
+    event_value: Optional[float] = None
+    event_details: Optional[str] = None
+    recorded_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class SalesRepRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=128)
+    email: Optional[str] = Field(default=None, max_length=128)
+    team: Optional[str] = Field(default=None, max_length=64)
+    active: bool = True
+
+
+class SalesRepResponse(BaseModel):
+    id: int
+    name: str
+    email: Optional[str] = None
+    team: Optional[str] = None
+    active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class LeadAssignmentRequest(BaseModel):
+    lead_id: int
+    sales_rep_id: int
+    assignment_notes: Optional[str] = None
+
+
+class LeadAssignmentResponse(BaseModel):
+    id: int
+    lead_id: int
+    sales_rep_id: int
+    assigned_at: datetime
+    updated_at: datetime
+    status: str
+    assignment_notes: Optional[str] = None
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class ABMMetricResponse(BaseModel):
+    id: int
+    campaign_id: Optional[int] = None
+    region: str
+    account_segment: str
+    opportunity_count: int
+    expected_value: float
+    updated_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class SalesCadenceRequest(BaseModel):
+    sales_rep_id: int
+    lead_id: int
+    cadence_step: str = Field(default='initial_outreach', min_length=3, max_length=64)
+    status: str = Field(default='scheduled', min_length=3, max_length=32)
+    due_at: Optional[datetime] = None
+    notes: Optional[str] = Field(default=None, max_length=1000)
+
+
+class SalesCadenceResponse(BaseModel):
+    id: int
+    sales_rep_id: int
+    lead_id: int
+    cadence_step: str
+    status: str
+    due_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class RepPerformanceSnapshotRequest(BaseModel):
+    sales_rep_id: int
+    period_start: datetime
+    period_end: datetime
+    quota_target: float = Field(default=0.0, ge=0.0)
+    revenue_achieved: float = Field(default=0.0, ge=0.0)
+
+
+class RepPerformanceSnapshotResponse(BaseModel):
+    id: int
+    sales_rep_id: int
+    period_start: datetime
+    period_end: datetime
+    opportunities_total: int
+    opportunities_won: int
+    win_rate: float
+    quota_target: float
+    revenue_achieved: float
+    forecast_revenue: float
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class WinLossRecordRequest(BaseModel):
+    opportunity_id: int
+    lead_id: Optional[int] = None
+    sales_rep_id: Optional[int] = None
+    outcome: str = Field(..., min_length=3, max_length=16)
+    reason: str = Field(..., min_length=3, max_length=512)
+    recorded_by: str = Field(default='system', max_length=128)
+
+
+class WinLossRecordResponse(BaseModel):
+    id: int
+    opportunity_id: int
+    lead_id: Optional[int] = None
+    sales_rep_id: Optional[int] = None
+    outcome: str
+    reason: str
+    recorded_by: str
+    created_at: datetime
+
+    model_config = {
+        'from_attributes': True,
+    }
+
+
+class MarketingFunnelAnalyticsResponse(BaseModel):
+    lookback_days: int
+    awareness: int
+    engagement: int
+    conversion: int
+    conversion_rate: float
 
 
 class AlertResponse(BaseModel):

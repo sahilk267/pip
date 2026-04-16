@@ -87,6 +87,55 @@ class Lead(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class ABTestCampaign(Base):
+    __tablename__ = 'ab_test_campaigns'
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(256), nullable=False, unique=True, index=True)
+    description = Column(Text)
+    target_segment = Column(String(128), server_default='all')
+    variants = Column(JSON, server_default='{}')
+    start_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    end_date = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String(32), nullable=False, server_default='draft')  # draft/running/completed
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class ABTestResult(Base):
+    __tablename__ = 'ab_test_results'
+
+    id = Column(Integer, primary_key=True, index=True)
+    campaign_id = Column(Integer, ForeignKey('ab_test_campaigns.id'), nullable=False, index=True)
+    lead_id = Column(Integer, ForeignKey('leads.id'), nullable=True, index=True)
+    variant = Column(String(64), nullable=False)
+    outcome = Column(String(32), nullable=False)  # opened/clicked/conversion
+    value = Column(Float, nullable=True)
+    result_metadata = Column('metadata', JSON, server_default='{}')
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    campaign = relationship('ABTestCampaign')
+    lead = relationship('Lead')
+
+
+class ConsentRecord(Base):
+    __tablename__ = 'consent_records'
+
+    id = Column(Integer, primary_key=True, index=True)
+    lead_id = Column(Integer, ForeignKey('leads.id'), nullable=False, index=True)
+    consent_type = Column(String(32), nullable=False, server_default='email')
+    status = Column(String(32), nullable=False, server_default='granted')  # granted/revoked
+    granted_at = Column(DateTime(timezone=True), server_default=func.now())
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    source = Column(String(64), server_default='system')
+    region = Column(String(32), server_default='GLOBAL')
+    policy_version = Column(String(64), server_default='1.0')
+    notes = Column(Text)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    lead = relationship('Lead')
+
+
 class DataSource(Base):
     __tablename__ = 'data_sources'
 
@@ -1009,6 +1058,165 @@ class MarketDataSourceReliability(Base):
     last_signal_at = Column(DateTime(timezone=True))
     reliability_metadata = Column('metadata', JSON, server_default='{}')
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+
+class PaidAPIDataSource(Base):
+    """Paid third-party market signal data source configuration."""
+    __tablename__ = 'paid_api_data_sources'
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(256), nullable=False, unique=True, index=True)
+    endpoint = Column(String(512), nullable=False)
+    api_key = Column(String(512), nullable=False)
+    active = Column(Boolean, nullable=False, server_default='true')
+    polling_interval_minutes = Column(Integer, nullable=False, server_default='60')
+    source_metadata = Column('metadata', JSON, server_default='{}')
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class PaidAPIIngestionLog(Base):
+    """History of paid API ingestion calls for audit and metrics."""
+    __tablename__ = 'paid_api_ingestion_logs'
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_id = Column(Integer, ForeignKey('paid_api_data_sources.id'), nullable=False, index=True)
+    fetched_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    events_fetched = Column(Integer, nullable=False, server_default='0')
+    opportunities_created = Column(Integer, nullable=False, server_default='0')
+    alerts_created = Column(Integer, nullable=False, server_default='0')
+    details = Column(Text)
+
+    source = relationship('PaidAPIDataSource')
+
+
+class CampaignFatigueRecord(Base):
+    """Track outreach frequency per lead and campaign for fatigue management."""
+    __tablename__ = 'campaign_fatigue_records'
+
+    id = Column(Integer, primary_key=True, index=True)
+    campaign_id = Column(Integer, ForeignKey('ab_test_campaigns.id'), nullable=True, index=True)
+    lead_id = Column(Integer, ForeignKey('leads.id'), nullable=False, index=True)
+    outreach_count = Column(Integer, nullable=False, server_default='0')
+    last_outreach_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String(32), nullable=False, server_default='active')  # active/throttled
+    fatigue_metadata = Column(JSON, server_default='{}')
+
+    campaign = relationship('ABTestCampaign')
+    lead = relationship('Lead')
+
+
+class FeedbackLoopRecord(Base):
+    """Log automated feedback loop events for campaign performance and model retraining."""
+    __tablename__ = 'feedback_loop_records'
+
+    id = Column(Integer, primary_key=True, index=True)
+    campaign_id = Column(Integer, ForeignKey('ab_test_campaigns.id'), nullable=True, index=True)
+    lead_id = Column(Integer, ForeignKey('leads.id'), nullable=True, index=True)
+    event_type = Column(String(64), nullable=False)  # opened/clicked/conversion/unsubscribe
+    event_value = Column(Float, nullable=True)
+    event_details = Column(Text)
+    recorded_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    campaign = relationship('ABTestCampaign')
+    lead = relationship('Lead')
+
+
+class SalesRep(Base):
+    __tablename__ = 'sales_reps'
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(128), nullable=False)
+    email = Column(String(128), nullable=True, index=True)
+    team = Column(String(64), nullable=True)
+    active = Column(Boolean, nullable=False, server_default='true')
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class LeadAssignment(Base):
+    __tablename__ = 'lead_assignments'
+
+    id = Column(Integer, primary_key=True, index=True)
+    lead_id = Column(Integer, ForeignKey('leads.id'), nullable=False, index=True)
+    sales_rep_id = Column(Integer, ForeignKey('sales_reps.id'), nullable=False, index=True)
+    assigned_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+    status = Column(String(32), nullable=False, server_default='active')
+    assignment_notes = Column(Text)
+
+    lead = relationship('Lead')
+    sales_rep = relationship('SalesRep')
+
+
+class ABMMetric(Base):
+    __tablename__ = 'abm_metrics'
+
+    id = Column(Integer, primary_key=True, index=True)
+    campaign_id = Column(Integer, ForeignKey('ab_test_campaigns.id'), nullable=True)
+    region = Column(String(64), nullable=False, server_default='GLOBAL', index=True)
+    account_segment = Column(String(64), nullable=False, index=True)
+    opportunity_count = Column(Integer, nullable=False, server_default='0')
+    expected_value = Column(Float, nullable=False, server_default='0.0')
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+    campaign = relationship('ABTestCampaign')
+
+
+class SalesCadenceRecord(Base):
+    __tablename__ = 'sales_cadence_records'
+
+    id = Column(Integer, primary_key=True, index=True)
+    sales_rep_id = Column(Integer, ForeignKey('sales_reps.id'), nullable=False, index=True)
+    lead_id = Column(Integer, ForeignKey('leads.id'), nullable=False, index=True)
+    cadence_step = Column(String(64), nullable=False, server_default='initial_outreach')
+    status = Column(String(32), nullable=False, server_default='scheduled', index=True)
+    due_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+    sales_rep = relationship('SalesRep')
+    lead = relationship('Lead')
+
+
+class RepPerformanceSnapshot(Base):
+    __tablename__ = 'rep_performance_snapshots'
+
+    id = Column(Integer, primary_key=True, index=True)
+    sales_rep_id = Column(Integer, ForeignKey('sales_reps.id'), nullable=False, index=True)
+    period_start = Column(DateTime(timezone=True), nullable=False)
+    period_end = Column(DateTime(timezone=True), nullable=False)
+    opportunities_total = Column(Integer, nullable=False, server_default='0')
+    opportunities_won = Column(Integer, nullable=False, server_default='0')
+    win_rate = Column(Float, nullable=False, server_default='0.0')
+    quota_target = Column(Float, nullable=False, server_default='0.0')
+    revenue_achieved = Column(Float, nullable=False, server_default='0.0')
+    forecast_revenue = Column(Float, nullable=False, server_default='0.0')
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+    sales_rep = relationship('SalesRep')
+
+
+class WinLossRecord(Base):
+    __tablename__ = 'win_loss_records'
+
+    id = Column(Integer, primary_key=True, index=True)
+    opportunity_id = Column(Integer, ForeignKey('market_opportunities.id'), nullable=False, index=True)
+    lead_id = Column(Integer, ForeignKey('leads.id'), nullable=True, index=True)
+    sales_rep_id = Column(Integer, ForeignKey('sales_reps.id'), nullable=True, index=True)
+    outcome = Column(String(16), nullable=False, index=True)  # win/loss
+    reason = Column(String(512), nullable=False)
+    recorded_by = Column(String(128), nullable=False, server_default='system')
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    opportunity = relationship('MarketOpportunity')
+    lead = relationship('Lead')
+    sales_rep = relationship('SalesRep')
+
+
 
 
 class MarketOpportunity(Base):

@@ -7,6 +7,29 @@ from ..schemas import (
     AIModelGovernanceResponse,
     AIModelGovernanceReviewRequest,
     AIModelGovernanceRollbackRequest,
+    ChatbotEscalationRequest,
+    ChatbotEscalationResponse,
+    ExplainabilityResponse,
+    EthicsReviewResponse,
+    FraudFeedbackRequest,
+    FraudFeedbackResponse,
+    FraudRiskResponse,
+    HumanOverrideRequest,
+    HumanOverrideStatusResponse,
+    InventoryForecastResponse,
+    ModelDriftStatusResponse,
+    PersonalizedRecommendationsResponse,
+    SalesProcessEnforcementResponse,
+    SelfLearningFeedbackRequest,
+    SelfLearningFeedbackResponse,
+    BiasFairnessResponse,
+    CompetitorMonitoringResponse,
+    DynamicPricingResponse,
+    ExternalIntegrationResponse,
+    MessageTemplateResponse,
+    RegionalLegalReviewResponse,
+    MarketingAutomationDispatchRequest,
+    MarketingAutomationDispatchResponse,
     CurrencyExchangeRateResponse,
     CurrencyExchangeRateUpsertRequest,
     CustomerUpdateNotificationResponse,
@@ -58,6 +81,27 @@ from ..services.sales_notifications import (
     create_sales_notification,
     list_sales_notifications,
     update_sales_notification_status,
+)
+from ..services.external_integrations import list_integrations
+from ..services.legal_review import list_legal_reviews
+from ..services.message_templates import list_message_templates
+from ..services.marketing_automation import dispatch_campaigns
+from ..services.ai_automation import (
+    assess_bias_fairness,
+    assess_fraud_risk,
+    evaluate_data_ethics_review,
+    evaluate_model_drift,
+    evaluate_sales_process_enforcement,
+    generate_explainability,
+    generate_personalized_recommendations,
+    forecast_inventory_demand,
+    get_human_override_status,
+    monitor_competitor_pricing,
+    record_fraud_feedback,
+    record_human_override,
+    record_self_learning_feedback,
+    recommend_dynamic_pricing,
+    trigger_chatbot_escalation,
 )
 
 router = APIRouter()
@@ -365,6 +409,247 @@ def get_ai_model_records(
 ) -> list[AIModelGovernanceResponse]:
     rows = list_model_records(db, model_name=model_name, status=governance_status, limit=limit)
     return [AIModelGovernanceResponse.model_validate(row) for row in rows]
+
+
+@router.post('/api/v1/automation/feedback-loop', response_model=SelfLearningFeedbackResponse)
+def submit_feedback_loop(
+    payload: SelfLearningFeedbackRequest,
+    db: Session = Depends(get_db),
+) -> SelfLearningFeedbackResponse:
+    result = record_self_learning_feedback(
+        db,
+        entity_type=payload.entity_type,
+        entity_id=payload.entity_id,
+        rating=payload.rating,
+        outcome=payload.outcome,
+        comments=payload.comments,
+        performed_by=payload.performed_by,
+    )
+    return SelfLearningFeedbackResponse(**result)
+
+
+@router.get('/api/v1/automation/explainability', response_model=ExplainabilityResponse)
+def get_ai_explainability(
+    entity_type: str = Query(default='order', min_length=2, max_length=64),
+    entity_id: int = Query(..., ge=1),
+    model_name: str | None = Query(default='ai_auto'),
+    context: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> ExplainabilityResponse:
+    result = generate_explainability(
+        db,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        model_name=model_name or 'ai_auto',
+        context=context,
+    )
+    return ExplainabilityResponse(**result)
+
+
+@router.get('/api/v1/automation/model-drift', response_model=ModelDriftStatusResponse)
+def get_model_drift(
+    model_name: str | None = Query(default=None),
+    window_days: int = Query(default=30, ge=1, le=365),
+    db: Session = Depends(get_db),
+) -> ModelDriftStatusResponse:
+    result = evaluate_model_drift(db, model_name=model_name, window_days=window_days)
+    return ModelDriftStatusResponse(**result)
+
+
+@router.post('/api/v1/automation/human-override', response_model=HumanOverrideStatusResponse)
+def post_human_override(
+    payload: HumanOverrideRequest,
+    db: Session = Depends(get_db),
+) -> HumanOverrideStatusResponse:
+    result = record_human_override(
+        db,
+        action=payload.action,
+        reason=payload.reason,
+        performed_by=payload.performed_by,
+    )
+    return HumanOverrideStatusResponse(**result)
+
+
+@router.get('/api/v1/automation/human-override', response_model=HumanOverrideStatusResponse)
+def get_human_override(
+    db: Session = Depends(get_db),
+) -> HumanOverrideStatusResponse:
+    result = get_human_override_status(db)
+    return HumanOverrideStatusResponse(**result)
+
+
+@router.get('/api/v1/automation/fraud-risk', response_model=FraudRiskResponse)
+def get_fraud_risk(
+    order_id: int | None = Query(default=None, ge=1),
+    total_amount: float | None = Query(default=None, ge=0.0),
+    source_channel: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> FraudRiskResponse:
+    result = assess_fraud_risk(db, order_id=order_id, total_amount=total_amount, source_channel=source_channel)
+    return FraudRiskResponse(**result)
+
+
+@router.get('/api/v1/automation/inventory/forecast', response_model=InventoryForecastResponse)
+def get_inventory_forecast(
+    sku: str | None = Query(default=None),
+    days: int = Query(default=30, ge=1, le=180),
+    db: Session = Depends(get_db),
+) -> InventoryForecastResponse:
+    result = forecast_inventory_demand(db, sku=sku, days=days)
+    return InventoryForecastResponse(**result)
+
+
+@router.get('/api/v1/automation/recommendations/personalized', response_model=PersonalizedRecommendationsResponse)
+def get_personalized_recommendations(
+    lead_id: int | None = Query(default=None, ge=1),
+    customer_id: int | None = Query(default=None, ge=1),
+    limit: int = Query(default=5, ge=1, le=20),
+    db: Session = Depends(get_db),
+) -> PersonalizedRecommendationsResponse:
+    result = generate_personalized_recommendations(db, lead_id=lead_id, customer_id=customer_id, limit=limit)
+    return PersonalizedRecommendationsResponse(**result)
+
+
+@router.post('/api/v1/automation/chatbot/escalation', response_model=ChatbotEscalationResponse)
+def create_chatbot_escalation(
+    payload: ChatbotEscalationRequest,
+    db: Session = Depends(get_db),
+) -> ChatbotEscalationResponse:
+    result = trigger_chatbot_escalation(
+        db,
+        issue_description=payload.issue_description,
+        fallback_channel=payload.fallback_channel,
+        performed_by=payload.performed_by,
+    )
+    return ChatbotEscalationResponse(**result)
+
+
+@router.post('/api/v1/automation/marketing/dispatch', response_model=MarketingAutomationDispatchResponse)
+def dispatch_automation_marketing_campaign(
+    payload: MarketingAutomationDispatchRequest,
+    db: Session = Depends(get_db),
+) -> MarketingAutomationDispatchResponse:
+    try:
+        result = dispatch_campaigns(
+            db,
+            campaign_type=payload.campaign_type,
+            limit=payload.limit,
+            provider_override=payload.provider_override,
+            performed_by=payload.performed_by,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return MarketingAutomationDispatchResponse(**result)
+
+
+@router.get('/api/v1/automation/data-ethics', response_model=EthicsReviewResponse)
+def get_data_ethics_review(
+    scope: str = Query(default='automation', min_length=3, max_length=64),
+    region: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> EthicsReviewResponse:
+    result = evaluate_data_ethics_review(db, scope=scope, region=region)
+    return EthicsReviewResponse(**result)
+
+
+@router.get('/api/v1/automation/legal-reviews', response_model=list[RegionalLegalReviewResponse])
+def get_automation_legal_reviews(
+    region: str | None = Query(default=None),
+    regulation: str | None = Query(default=None),
+    review_status: str | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[RegionalLegalReviewResponse]:
+    rows = list_legal_reviews(
+        db,
+        region=region,
+        regulation=regulation,
+        status=review_status,
+        limit=limit,
+    )
+    return [RegionalLegalReviewResponse.model_validate(row) for row in rows]
+
+
+@router.get('/api/v1/automation/competitor-monitoring', response_model=CompetitorMonitoringResponse)
+def get_competitor_monitoring(
+    product_name: str | None = Query(default=None),
+    limit: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+) -> CompetitorMonitoringResponse:
+    result = monitor_competitor_pricing(db, product_name=product_name, limit=limit)
+    return CompetitorMonitoringResponse(**result)
+
+
+@router.get('/api/v1/automation/dynamic-pricing', response_model=DynamicPricingResponse)
+def get_dynamic_pricing(
+    sku: str | None = Query(default=None),
+    base_price: float = Query(default=100.0, ge=0.0),
+    demand_factor: float = Query(default=1.0, ge=0.1, le=3.0),
+    db: Session = Depends(get_db),
+) -> DynamicPricingResponse:
+    result = recommend_dynamic_pricing(db, sku=sku, base_price=base_price, demand_factor=demand_factor)
+    return DynamicPricingResponse(**result)
+
+
+@router.post('/api/v1/automation/fraud-feedback', response_model=FraudFeedbackResponse)
+def post_fraud_feedback(
+    payload: FraudFeedbackRequest,
+    db: Session = Depends(get_db),
+) -> FraudFeedbackResponse:
+    result = record_fraud_feedback(
+        db,
+        order_id=payload.order_id,
+        feedback=payload.feedback,
+        severity=payload.severity,
+        performed_by=payload.performed_by,
+    )
+    return FraudFeedbackResponse(**result)
+
+
+@router.get('/api/v1/automation/bias-fairness', response_model=BiasFairnessResponse)
+def get_bias_fairness(
+    model_name: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> BiasFairnessResponse:
+    result = assess_bias_fairness(db, model_name=model_name)
+    return BiasFairnessResponse(**result)
+
+
+@router.get('/api/v1/automation/sales-process/enforcement', response_model=SalesProcessEnforcementResponse)
+def get_sales_process_enforcement(
+    sales_rep_id: int | None = Query(default=None, ge=1),
+    entity_type: str | None = Query(default=None),
+    entity_id: int | None = Query(default=None, ge=1),
+    db: Session = Depends(get_db),
+) -> SalesProcessEnforcementResponse:
+    result = evaluate_sales_process_enforcement(
+        db,
+        sales_rep_id=sales_rep_id,
+        entity_type=entity_type,
+        entity_id=entity_id,
+    )
+    return SalesProcessEnforcementResponse(**result)
+
+
+@router.get('/api/v1/automation/integrations/external', response_model=list[ExternalIntegrationResponse])
+def list_automation_external_integrations(
+    provider: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[ExternalIntegrationResponse]:
+    rows = list_integrations(db, provider=provider, status=status, limit=limit)
+    return [ExternalIntegrationResponse.model_validate(row) for row in rows]
+
+
+@router.get('/api/v1/automation/governance/multi-language', response_model=list[MessageTemplateResponse])
+def get_automation_multi_language_templates(
+    template_type: str | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[MessageTemplateResponse]:
+    rows = list_message_templates(db, template_type=template_type, limit=limit)
+    return [MessageTemplateResponse.model_validate(row) for row in rows]
 
 
 # ---------- Multi-currency & tax compliance ----------

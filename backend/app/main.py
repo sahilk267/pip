@@ -22,6 +22,7 @@ from .routers.automation import router as automation_router
 from .routers.messages import router as messages_router
 from .routers.escalations import router as escalations_router
 from .routers.market_intelligence import router as market_intelligence_router
+from .routers.analytics import router as analytics_router
 
 _STATIC = Path(__file__).resolve().parent / 'static'
 
@@ -69,3 +70,4 @@ app.include_router(automation_router)
 app.include_router(messages_router)
 app.include_router(escalations_router)
 app.include_router(market_intelligence_router)
+app.include_router(analytics_router)

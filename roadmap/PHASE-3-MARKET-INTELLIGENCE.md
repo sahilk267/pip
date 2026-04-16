@@ -79,30 +79,30 @@
 - [x] Real-time market alerting
 - [x] Sentiment analysis for demand
 - [x] Data source reliability scoring
-- [ ] A/B testing of outreach
-- [ ] Automated lead scoring
-- [ ] GDPR/consent management
-- [ ] Paid API integration
+- [x] A/B testing of outreach
+- [x] Automated lead scoring
+- [x] GDPR/consent management
+- [x] Paid API integration
 - [x] Opportunity validation
-- [ ] Campaign fatigue management
-- [ ] Consent revocation
-- [ ] Automated feedback loop
-- [ ] Audit logging for all actions
-- [ ] Lead/account assignment
-- [ ] ABM analytics
-- [ ] Sales cadence tracking
-- [ ] Rep performance dashboards
-- [ ] Quota/forecasting
-- [ ] Win/loss analytics
-- [ ] Regional legal review checklist
-- [ ] Multi-language support
-- [ ] External sales/marketing tool integration
-- [ ] Escalation playbook
-- [ ] AI model governance records
-- [ ] Governance/compliance records
-- [ ] Competitive campaign tracking
-- [ ] Automated marketing segmentation
-- [ ] Ad platform integration
-- [ ] Marketing funnel analytics
-- [ ] B2C product trend analytics
-- [ ] Personalized marketing (B2C)
+- [x] Campaign fatigue management
+- [x] Consent revocation
+- [x] Automated feedback loop
+- [x] Audit logging for all actions
+- [x] Lead/account assignment
+- [x] ABM analytics
+- [x] Sales cadence tracking
+- [x] Rep performance dashboards
+- [x] Quota/forecasting
+- [x] Win/loss analytics
+- [x] Regional legal review checklist
+- [x] Multi-language support
+- [x] External sales/marketing tool integration
+- [x] Escalation playbook
+- [x] AI model governance records
+- [x] Governance/compliance records
+- [x] Competitive campaign tracking
+- [x] Automated marketing segmentation
+- [x] Ad platform integration
+- [x] Marketing funnel analytics
+- [x] B2C product trend analytics
+- [x] Personalized marketing (B2C)
