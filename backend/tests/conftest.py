@@ -13,7 +13,10 @@ from backend.app import crm_models
 
 @pytest.fixture(autouse=True)
 def reset_database():
-    Base.metadata.drop_all(bind=engine)
+    try:
+        Base.metadata.drop_all(bind=engine)
+    except Exception:
+        pass
     init_db()
     with SessionLocal() as db:
         for model in (models.AuditLog, models.LeadStageTransition, models.CRMCommunication, models.Product, models.Vendor, models.Lead, models.DataSource, models.Alert, crm_models.Customer):

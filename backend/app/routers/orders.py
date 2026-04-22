@@ -132,6 +132,7 @@ def list_order_versions(
     return [EntityVersionRecordResponse.model_validate(row) for row in rows]
 
 
+@router.post('/api/v1/security/dr/backup/orders/b2c/{order_id}/versions/{version_number}/rollback', response_model=B2COrderResponse)
 @router.post('/api/v1/orders/b2c/{order_id}/versions/{version_number}/rollback', response_model=B2COrderResponse)
 def rollback_order(
     order_id: int,

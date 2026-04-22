@@ -327,6 +327,7 @@ def create_or_update_rate_limit_rule(
     return RFQRateLimitRuleResponse.model_validate(rule)
 
 
+@router.get('/api/v1/security/rate-limit/rules', response_model=list[RFQRateLimitRuleResponse])
 @router.get('/api/v1/rfq/rate-limit/rules', response_model=list[RFQRateLimitRuleResponse])
 def get_rate_limit_rules(db: Session = Depends(get_db)) -> list[RFQRateLimitRuleResponse]:
     rows = list_rate_limit_rules(db)

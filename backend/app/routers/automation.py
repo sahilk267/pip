@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from .. import models
 from ..database import get_db
 from ..schemas import (
     AIModelGovernanceCreate,
@@ -26,10 +27,15 @@ from ..schemas import (
     CompetitorMonitoringResponse,
     DynamicPricingResponse,
     ExternalIntegrationResponse,
+    ABTestCampaignResponse,
+    ComplianceReport,
     MessageTemplateResponse,
     RegionalLegalReviewResponse,
     MarketingAutomationDispatchRequest,
     MarketingAutomationDispatchResponse,
+    MarketingDispatchStatusResponse,
+    MarketingDispatchSyncResponse,
+    MarketingUpsellCrossSellTriggerRequest,
     CurrencyExchangeRateResponse,
     CurrencyExchangeRateUpsertRequest,
     CustomerUpdateNotificationResponse,
@@ -67,6 +73,7 @@ from ..services.deal_outcomes import (
     list_deal_outcomes,
     record_deal_outcome,
 )
+from ..services.compliance import generate_compliance_report
 from ..services.pricing_approvals import (
     create_pricing_approval_request,
     list_pricing_approval_requests,
@@ -84,8 +91,9 @@ from ..services.sales_notifications import (
 )
 from ..services.external_integrations import list_integrations
 from ..services.legal_review import list_legal_reviews
+from ..services.market_intelligence import list_ab_test_campaigns, get_ab_test_metrics
 from ..services.message_templates import list_message_templates
-from ..services.marketing_automation import dispatch_campaigns
+from ..services.marketing_automation import dispatch_campaigns, get_dispatch_statuses, sync_dispatch_statuses
 from ..services.ai_automation import (
     assess_bias_fairness,
     assess_fraud_risk,
@@ -411,8 +419,36 @@ def get_ai_model_records(
     return [AIModelGovernanceResponse.model_validate(row) for row in rows]
 
 
+@router.get('/api/v1/security/ai-governance/models', response_model=list[AIModelGovernanceResponse])
+def list_security_ai_model_governance(
+    model_name: str | None = Query(default=None),
+    governance_status: str | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[AIModelGovernanceResponse]:
+    rows = list_model_records(db, model_name=model_name, status=governance_status, limit=limit)
+    return [AIModelGovernanceResponse.model_validate(row) for row in rows]
+
+
 @router.post('/api/v1/automation/feedback-loop', response_model=SelfLearningFeedbackResponse)
 def submit_feedback_loop(
+    payload: SelfLearningFeedbackRequest,
+    db: Session = Depends(get_db),
+) -> SelfLearningFeedbackResponse:
+    result = record_self_learning_feedback(
+        db,
+        entity_type=payload.entity_type,
+        entity_id=payload.entity_id,
+        rating=payload.rating,
+        outcome=payload.outcome,
+        comments=payload.comments,
+        performed_by=payload.performed_by,
+    )
+    return SelfLearningFeedbackResponse(**result)
+
+
+@router.post('/api/v1/automation/reinforcement-learning', response_model=SelfLearningFeedbackResponse)
+def submit_reinforcement_learning(
     payload: SelfLearningFeedbackRequest,
     db: Session = Depends(get_db),
 ) -> SelfLearningFeedbackResponse:
@@ -478,8 +514,20 @@ def get_human_override(
     return HumanOverrideStatusResponse(**result)
 
 
+@router.get('/api/v1/security/payment-fraud/risk', response_model=FraudRiskResponse)
 @router.get('/api/v1/automation/fraud-risk', response_model=FraudRiskResponse)
 def get_fraud_risk(
+    order_id: int | None = Query(default=None, ge=1),
+    total_amount: float | None = Query(default=None, ge=0.0),
+    source_channel: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> FraudRiskResponse:
+    result = assess_fraud_risk(db, order_id=order_id, total_amount=total_amount, source_channel=source_channel)
+    return FraudRiskResponse(**result)
+
+
+@router.get('/api/v1/automation/auto-purchase/risk-management', response_model=FraudRiskResponse)
+def get_auto_purchase_risk_management(
     order_id: int | None = Query(default=None, ge=1),
     total_amount: float | None = Query(default=None, ge=0.0),
     source_channel: str | None = Query(default=None),
@@ -524,6 +572,20 @@ def create_chatbot_escalation(
     return ChatbotEscalationResponse(**result)
 
 
+@router.post('/api/v1/automation/marketing/chatbot/escalation', response_model=ChatbotEscalationResponse)
+def create_marketing_chatbot_escalation(
+    payload: ChatbotEscalationRequest,
+    db: Session = Depends(get_db),
+) -> ChatbotEscalationResponse:
+    result = trigger_chatbot_escalation(
+        db,
+        issue_description=payload.issue_description,
+        fallback_channel=payload.fallback_channel,
+        performed_by=payload.performed_by,
+    )
+    return ChatbotEscalationResponse(**result)
+
+
 @router.post('/api/v1/automation/marketing/dispatch', response_model=MarketingAutomationDispatchResponse)
 def dispatch_automation_marketing_campaign(
     payload: MarketingAutomationDispatchRequest,
@@ -540,6 +602,43 @@ def dispatch_automation_marketing_campaign(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return MarketingAutomationDispatchResponse(**result)
+
+
+@router.post('/api/v1/automation/marketing/upsell-cross-sell/trigger', response_model=MarketingAutomationDispatchResponse)
+def trigger_automation_upsell_cross_sell_campaigns(
+    payload: MarketingUpsellCrossSellTriggerRequest,
+    db: Session = Depends(get_db),
+) -> MarketingAutomationDispatchResponse:
+    result = dispatch_campaigns(
+        db,
+        campaign_type='upsell_cross_sell',
+        limit=payload.limit,
+        provider_override=payload.provider_override,
+        performed_by=payload.performed_by,
+    )
+    return MarketingAutomationDispatchResponse(**result)
+
+
+@router.get('/api/v1/automation/marketing/dispatches', response_model=list[MarketingDispatchStatusResponse])
+def list_automation_marketing_dispatches(
+    limit: int = Query(default=100, ge=1, le=500),
+    status: str | None = Query(default=None),
+    provider: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> list[MarketingDispatchStatusResponse]:
+    rows = get_dispatch_statuses(db, limit=limit, status=status, provider=provider)
+    return [MarketingDispatchStatusResponse.model_validate(row) for row in rows]
+
+
+@router.post('/api/v1/security/patch-automation/sync', response_model=MarketingDispatchSyncResponse)
+@router.post('/api/v1/automation/marketing/dispatches/sync', response_model=MarketingDispatchSyncResponse)
+def sync_automation_marketing_dispatches(
+    limit: int = Query(default=200, ge=1, le=1000),
+    performed_by: str = Query(default='marketing-sync'),
+    db: Session = Depends(get_db),
+) -> MarketingDispatchSyncResponse:
+    result = sync_dispatch_statuses(db, limit=limit, performed_by=performed_by)
+    return MarketingDispatchSyncResponse(**result)
 
 
 @router.get('/api/v1/automation/data-ethics', response_model=EthicsReviewResponse)
@@ -568,6 +667,41 @@ def get_automation_legal_reviews(
         limit=limit,
     )
     return [RegionalLegalReviewResponse.model_validate(row) for row in rows]
+
+
+@router.get('/api/v1/automation/compliance/report', response_model=ComplianceReport)
+def get_automation_compliance_report(db: Session = Depends(get_db)) -> ComplianceReport:
+    return generate_compliance_report(db)
+
+
+@router.get('/api/v1/automation/activity-logs')
+def get_automation_activity_logs(
+    entity_type: str | None = Query(default=None),
+    action: str | None = Query(default=None),
+    performed_by: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    q = db.query(models.AuditLog)
+    if entity_type:
+        q = q.filter(models.AuditLog.entity_type == entity_type)
+    if action:
+        q = q.filter(models.AuditLog.action == action)
+    if performed_by:
+        q = q.filter(models.AuditLog.performed_by == performed_by)
+    rows = q.order_by(models.AuditLog.created_at.desc(), models.AuditLog.id.desc()).limit(limit).all()
+    return [
+        {
+            'id': row.id,
+            'entity_type': row.entity_type,
+            'entity_id': row.entity_id,
+            'action': row.action,
+            'detail': row.detail,
+            'performed_by': row.performed_by,
+            'created_at': row.created_at,
+        }
+        for row in rows
+    ]
 
 
 @router.get('/api/v1/automation/competitor-monitoring', response_model=CompetitorMonitoringResponse)
@@ -640,6 +774,26 @@ def list_automation_external_integrations(
 ) -> list[ExternalIntegrationResponse]:
     rows = list_integrations(db, provider=provider, status=status, limit=limit)
     return [ExternalIntegrationResponse.model_validate(row) for row in rows]
+
+
+@router.get('/api/v1/automation/marketing/ab-tests', response_model=list[ABTestCampaignResponse])
+def list_automation_ab_tests(
+    db: Session = Depends(get_db),
+) -> list[ABTestCampaignResponse]:
+    rows = list_ab_test_campaigns(db)
+    return [ABTestCampaignResponse.model_validate(row) for row in rows]
+
+
+@router.get('/api/v1/automation/marketing/ab-tests/{campaign_id}/metrics')
+def get_automation_ab_test_metrics(
+    campaign_id: int,
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        payload = get_ab_test_metrics(db, campaign_id=campaign_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return payload
 
 
 @router.get('/api/v1/automation/governance/multi-language', response_model=list[MessageTemplateResponse])

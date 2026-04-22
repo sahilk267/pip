@@ -7,7 +7,7 @@
 | 3     | Proactive Market Intelligence & Outbound Sales (market trends, product analytics, outbound sales, personalized marketing) | Not Started |            |          |       | Market and product analytics, outbound sales, and personalized marketing for both B2B and B2C. |
 | 4     | Comprehensive Analytics & Continuous Improvement (sales, product, customer analytics, feedback loops, knowledge base) | Not Started |            |          |       | Unified analytics for sales, product, customer, and continuous improvement. |
 | 5     | Advanced Automation/AI Modules (self-learning, personalization, dynamic pricing, conversational AI, B2B+B2C automation) | Not Started |            |          |       | AI-driven automation, self-learning, dynamic pricing, and personalization for both B2B and B2C. |
-| 6     | Security, Compliance, and Production Hardening (zero trust, DLP, payment security, fraud detection, compliance for B2B+B2C) | Not Started |            |          |       | Security, compliance, payment security, and fraud detection for both B2B and B2C. |
+| 6     | Security, Compliance, and Production Hardening (zero trust, DLP, payment security, fraud detection, compliance for B2B+B2C) | In Progress | 2026-04-21 |          | Procurement Intelligence Team | Started security hardening work with security alias endpoints for DDoS, DR/backup, secret rotation, zero trust and patch automation; backend validation in progress, currently blocked by SQLite test DB setup issue on `order_deal_feedback`. |
 
 ## Instructions
 - Update the `Status`, `Start Date`, `End Date`, `Owner`, and `Notes` columns as each phase progresses.

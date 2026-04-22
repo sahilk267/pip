@@ -28,6 +28,11 @@ def get_compliance_report(db: Session = Depends(get_db)) -> ComplianceReport:
     return generate_compliance_report(db)
 
 
+@router.get('/api/v1/security/compliance/report', response_model=ComplianceReport)
+def get_security_compliance_report(db: Session = Depends(get_db)) -> ComplianceReport:
+    return generate_compliance_report(db)
+
+
 @router.get('/api/v1/compliance/scraping-controls', response_model=ScrapingComplianceResponse)
 def scraping_compliance_bundle(locale: str = 'en') -> ScrapingComplianceResponse:
     return ScrapingComplianceResponse(
@@ -78,6 +83,22 @@ def create_legal_review(
 
 @router.get('/api/v1/compliance/legal-reviews', response_model=list[RegionalLegalReviewResponse])
 def list_legal_reviews_endpoint(
+    entity_type: Optional[str] = Query(default=None),
+    region: Optional[str] = Query(default=None),
+    regulation: Optional[str] = Query(default=None),
+    review_status: Optional[str] = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[RegionalLegalReviewResponse]:
+    rows = list_legal_reviews(db, entity_type=entity_type, region=region, regulation=regulation, status=review_status, limit=limit)
+    return [RegionalLegalReviewResponse.model_validate(row) for row in rows]
+
+
+@router.get('/api/v1/security/pci-dss/legal-reviews', response_model=list[RegionalLegalReviewResponse])
+@router.get('/api/v1/security/audit-schedules', response_model=list[RegionalLegalReviewResponse])
+@router.get('/api/v1/security/vulnerability-scans', response_model=list[RegionalLegalReviewResponse])
+@router.get('/api/v1/security/legal-reviews', response_model=list[RegionalLegalReviewResponse])
+def list_security_legal_reviews(
     entity_type: Optional[str] = Query(default=None),
     region: Optional[str] = Query(default=None),
     regulation: Optional[str] = Query(default=None),

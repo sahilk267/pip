@@ -113,6 +113,11 @@ def update_lead_preferences(lead_id: int, payload: schemas.LeadPreferences, db: 
     return lead
 
 
+@router.patch('/api/v1/security/privacy/leads/{lead_id}/preferences', response_model=schemas.LeadResponse)
+def update_security_privacy_lead_preferences(lead_id: int, payload: schemas.LeadPreferences, db: Session = Depends(get_db)) -> schemas.LeadResponse:
+    return update_lead_preferences(lead_id, payload, db)
+
+
 @router.post('/api/v1/customers', response_model=schemas.CustomerResponse)
 def create_customer(payload: schemas.CustomerCreate, db: Session = Depends(get_db)):
     entity = Customer(
@@ -284,3 +289,10 @@ def crm_dashboard(db: Session = Depends(get_db)):
         leads_by_segment=lead_segments,
         customers_by_consent=customers_by_consent,
     )
+
+
+@router.get('/api/v1/security/data-access-control/compliance', response_model=schemas.CrmDashboard)
+@router.get('/api/v1/security/zero-trust/access-control/compliance', response_model=schemas.CrmDashboard)
+@router.get('/api/v1/security/privacy/compliance', response_model=schemas.CrmDashboard)
+def security_privacy_compliance_dashboard(db: Session = Depends(get_db)) -> schemas.CrmDashboard:
+    return crm_dashboard(db=db)

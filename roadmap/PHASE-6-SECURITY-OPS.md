@@ -70,31 +70,31 @@
 - PCI DSS compliance documentation (B2C)
 
 ## Checklist
-- [ ] API rate limiting
-- [ ] DDoS protection
-- [ ] Secret management
-- [ ] Secret rotation
-- [ ] Monitoring/alerting dashboards
-- [ ] Automated incident response
-- [ ] Security audits scheduled
-- [ ] Automated vulnerability scanning
-- [ ] Zero trust architecture
-- [ ] Automated compliance reporting
-- [ ] Automated DR/backup
-- [ ] Access review automation
-- [ ] Security patch automation
-- [ ] Security audit logging
-- [ ] Sales/product/customer data access control
-- [ ] DLP for sales/product/customer data
-- [ ] Sales/customer data privacy compliance analytics
-- [ ] Regional legal review checklist
-- [ ] Multi-language support
-- [ ] External security/tool integration
-- [ ] Escalation playbook
-- [ ] AI model governance records
-- [ ] Governance/compliance records
-- [ ] Marketing/customer data privacy enforcement
-- [ ] Marketing/customer data breach incident response playbook
-- [ ] Right to be forgotten (marketing/customers)
-- [ ] Payment fraud detection (B2C)
-- [ ] PCI DSS compliance (B2C)
+- [x] API rate limiting
+- [x] DDoS protection
+- [x] Secret management
+- [x] Secret rotation
+- [x] Monitoring/alerting dashboards
+- [x] Automated incident response
+- [x] Security audits scheduled
+- [x] Automated vulnerability scanning
+- [x] Zero trust architecture
+- [x] Automated compliance reporting
+- [x] Automated DR/backup
+- [x] Access review automation
+- [x] Security patch automation
+- [x] Security audit logging
+- [x] Sales/product/customer data access control
+- [x] DLP for sales/product/customer data
+- [x] Sales/customer data privacy compliance analytics
+- [x] Regional legal review checklist
+- [x] Multi-language support
+- [x] External security/tool integration
+- [x] Escalation playbook
+- [x] AI model governance records
+- [x] Governance/compliance records
+- [x] Marketing/customer data privacy enforcement
+- [x] Marketing/customer data breach incident response playbook
+- [x] Right to be forgotten (marketing/customers)
+- [x] Payment fraud detection (B2C)
+- [x] PCI DSS compliance (B2C)

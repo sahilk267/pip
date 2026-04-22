@@ -71,27 +71,27 @@
 
 ## Phase 5 status
 - Core Phase 5 automation scaffolding implemented and tested.
-- Completed endpoints include self-learning feedback, explainability, model drift monitoring, human override, fraud risk assessment, inventory forecasting, personalized recommendations, chatbot escalation, data ethics review, competitor monitoring, dynamic pricing, fraud feedback, bias/fairness assessment, sales process enforcement, and AI governance record support.
+- Completed endpoints include self-learning feedback, explainability, model drift monitoring, human override, fraud risk assessment, inventory forecasting, personalized recommendations, chatbot escalation, data ethics review, competitor monitoring, dynamic pricing, fraud feedback, bias/fairness assessment, sales process enforcement, AI governance record support, marketing dispatch lifecycle (dispatch/list/sync/upsell-cross-sell), and marketing A/B test listing/metrics.
 - Phase 4 analytics regression remains green after Phase 5 integration.
 
 ## Checklist
 - [x] Self-learning feedback loop (B2B/B2C)
-- [ ] Reinforcement learning
+- [x] Reinforcement learning
 - [x] Data privacy/ethics review
 - [x] AI explainability
 - [x] Conversational AI escalation
-- [ ] Multilingual support
+- [x] Multilingual support
 - [x] Competitor price monitoring
-- [ ] AI-driven marketing campaign optimization
-- [ ] AI-powered content personalization
-- [ ] Marketing chatbot integration
-- [ ] Marketing campaign A/B testing
-- [ ] Inventory forecasting
-- [ ] Risk management for auto-purchase
+- [x] AI-driven marketing campaign optimization
+- [x] AI-powered content personalization
+- [x] Marketing chatbot integration
+- [x] Marketing campaign A/B testing
+- [x] Inventory forecasting
+- [x] Risk management for auto-purchase
 - [x] Fraud detection for auto-purchase
 - [x] Sales process enforcement
-- [ ] Rep and customer activity logging
-- [ ] Sales and customer compliance analytics
+- [x] Rep and customer activity logging
+- [x] Sales and customer compliance analytics
 - [x] Model drift monitoring
 - [x] Human override/kill switch
 - [x] Bias/fairness monitoring

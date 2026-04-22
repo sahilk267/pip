@@ -83,8 +83,21 @@ def get_external_integration(
     return ExternalIntegrationResponse.model_validate(row)
 
 
+@router.get('/api/v1/security/secrets/integrations', response_model=list[ExternalIntegrationResponse])
+@router.get('/api/v1/security/secrets/rotation', response_model=list[ExternalIntegrationResponse])
 @router.get('/api/v1/integrations/external', response_model=list[ExternalIntegrationResponse])
 def list_external_integrations(
+    provider: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[ExternalIntegrationResponse]:
+    rows = list_integrations(db, provider=provider, status=status, limit=limit)
+    return [ExternalIntegrationResponse.model_validate(row) for row in rows]
+
+
+@router.get('/api/v1/security/integrations/external', response_model=list[ExternalIntegrationResponse])
+def list_security_external_integrations(
     provider: str | None = Query(default=None),
     status: str | None = Query(default=None),
     limit: int = Query(default=200, ge=1, le=500),

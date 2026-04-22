@@ -102,6 +102,7 @@ def update_rule(
 
 # ---------- Escalation Records ----------
 
+@router.post('/api/v1/security/incident-response/trigger', response_model=EscalationRecordResponse)
 @router.post('/api/v1/escalations/trigger', response_model=EscalationRecordResponse)
 def trigger_escalation_manually(
     rule_id: int = Query(...),

@@ -10,3 +10,9 @@ router = APIRouter()
 def locale_strings(locale: str = 'en') -> LocaleStringsResponse:
     key = (locale or 'en').split('-')[0].lower()
     return LocaleStringsResponse(locale=key, strings=strings_for_locale(locale))
+
+
+@router.get('/api/v1/security/i18n/strings', response_model=LocaleStringsResponse)
+def security_locale_strings(locale: str = 'en') -> LocaleStringsResponse:
+    key = (locale or 'en').split('-')[0].lower()
+    return LocaleStringsResponse(locale=key, strings=strings_for_locale(locale))
