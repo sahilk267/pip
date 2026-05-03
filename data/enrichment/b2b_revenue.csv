@@ -1,5 +1,23 @@
-name,revenue_estimate,decision_maker,score
-Aurora Supply Partners,$12M,Ravi Patel,A
-Taj Metals Traders,$5.2M,Anjali Varma,B+
-Springfield Industrial Supplies,$18.4M,Lisa Hale,A-
-Nova Components,$9.1M,Marco Chen,A
+name,revenue_estimate,decision_maker,score,industry,employees,founded,website,country
+Aurora Supply Partners,$12M,Ravi Patel,A,Renewable Energy,145,2011,aurora.io,US
+Taj Metals Traders,$5.2M,Anjali Varma,B+,Construction Materials,78,2003,tajmetals.com,IN
+Springfield Industrial Supplies,$18.4M,Lisa Hale,A-,Industrial Equipment,230,1998,springfieldind.com,US
+Nova Components,$9.1M,Marco Chen,A,Electronics,112,2015,nova-components.com,US
+Luminous Tech Distributors,$22.3M,Sarah Kim,A+,Electronics Distribution,310,2008,luminoustech.com,US
+SmartSensor Technologies,$14.7M,Arun Mehta,A,IoT Sensors,185,2016,smartsensor.io,IN
+Pacific Rim Trading Co.,$8.9M,James Wong,B+,Import/Export,95,2007,pacificrim.com,US
+Great Lakes Fabrication,$31.2M,Patricia Moore,A-,Metal Fabrication,420,1994,greatlakesfab.com,US
+Sunbelt Materials LLC,$6.4M,Carlos Ruiz,B,Construction Materials,88,2010,sunbeltmat.com,US
+Eastern Seaboard Logistics,$45.8M,Amanda Chen,A+,Logistics,560,2001,eslogistics.com,US
+Vertex Manufacturing Group,$19.5M,David Park,A,Electronics Manufacturing,275,2012,vertexmfg.com,US
+BlueOcean Procurement Solutions,$28.1M,Emily Watson,A+,Procurement Services,340,2009,blueoceanproc.com,US
+Meridian Chemicals International,$16.7M,Robert Johnson,A-,Chemicals,198,2005,meridianchem.com,US
+TechBridge Distribution,$11.3M,Priya Sharma,A,Technology Distribution,143,2017,techbridge.io,US
+Bharat Precision Engineering,$7.8M,Suresh Kumar,B+,Precision Engineering,102,2004,bharatprecision.in,IN
+Krishna Agro Commodities,$4.2M,Lakshmi Devi,B,Agriculture,65,2000,krishnaagro.in,IN
+Delhi Auto Parts Hub,$9.6M,Rahul Gupta,B+,Automotive Parts,128,2006,delhiautoparts.in,IN
+Surat Textiles Export House,$13.4M,Kavita Shah,A-,Textiles,176,2002,surattextiles.in,IN
+Chennai Electronics Wholesale,$21.7M,Vijay Rajan,A,Electronics,289,2009,chennaielec.in,IN
+Apex Industrial Group,$37.5M,Michael Torres,A+,Industrial Equipment,478,1996,apexind.com,US
+NorthStar Safety Systems,$8.3M,Jennifer Clark,B+,Safety Equipment,107,2013,northstarsafety.com,US
+FusionTech Semiconductors,$52.1M,Alan Huang,A+,Semiconductors,612,2007,fusiontech.io,US

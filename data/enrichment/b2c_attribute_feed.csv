@@ -1,3 +1,21 @@
 sku,category,image_url,attribute_tags
-NTM-300,Thermal Module,https://example.com/ntm-300.jpg,efficiency:92%;warranty:2 years
-PDO-120,Power Drive,https://example.com/pdo-120.jpg,efficiency:88%;warranty:1 year
+NTM-300,Thermal Module,https://example.com/ntm-300.jpg,efficiency:92%;warranty:2 years;weight:1.2kg;voltage:24V
+PDO-120,Power Drive,https://example.com/pdo-120.jpg,efficiency:88%;warranty:1 year;weight:0.8kg;voltage:12V
+AIP-500,Industrial Press,https://example.com/aip-500.jpg,capacity:500T;warranty:3 years;weight:2400kg;power:22kW
+NSH-XL,Safety Equipment,https://example.com/nsh-xl.jpg,standard:ANSI Z89.1;rating:Type I Class E;weight:0.45kg;color:yellow
+FT32-MCU,Semiconductor,https://example.com/ft32-mcu.jpg,cores:32-bit;flash:512KB;voltage:3.3V;package:LQFP48
+SEN-200,Industrial Sensor,https://example.com/sen-200.jpg,range:0-200bar;accuracy:0.5%;warranty:2 years;ip_rating:IP67
+CON-110,Connector,https://example.com/con-110.jpg,pins:110;rating:5A;warranty:1 year;ip_rating:IP65;standard:DIN41612
+CAB-50M,Cable,https://example.com/cab-50m.jpg,length:50m;gauge:16AWG;jacket:PVC;temperature:-40C to 80C
+REL-48V,Relay Module,https://example.com/rel-48v.jpg,voltage:48V;current:10A;warranty:2 years;contacts:DPDT
+PLC-128,PLC Controller,https://example.com/plc-128.jpg,io_points:128;cpu:32bit;memory:8MB;warranty:3 years
+HMI-700,HMI Panel,https://example.com/hmi-700.jpg,screen:7inch;resolution:800x480;touch:capacitive;warranty:2 years
+VFD-75KW,Variable Freq Drive,https://example.com/vfd-75kw.jpg,power:75kW;phases:3;voltage:415V;warranty:2 years
+BAT-12V,Battery,https://example.com/bat-12v.jpg,voltage:12V;capacity:100Ah;type:lithium;warranty:3 years
+INV-5KW,Solar Inverter,https://example.com/inv-5kw.jpg,power:5kW;efficiency:97.6%;warranty:5 years;grid:on-off
+UPS-2KVA,UPS System,https://example.com/ups-2kva.jpg,capacity:2KVA;runtime:30min;battery:sealed-lead-acid;warranty:2 years
+MTR-15HP,Electric Motor,https://example.com/mtr-15hp.jpg,power:15HP;speed:1450rpm;frame:160M;efficiency:IE3;warranty:3 years
+PMP-100,Centrifugal Pump,https://example.com/pmp-100.jpg,flow:100LPM;head:50m;material:SS316;warranty:2 years
+GEN-20KVA,Generator,https://example.com/gen-20kva.jpg,power:20KVA;fuel:diesel;warranty:2 years;avr:yes
+AIR-10CFM,Air Compressor,https://example.com/air-10cfm.jpg,flow:10CFM;pressure:150psi;tank:60gal;warranty:1 year
+WLD-200A,Welder,https://example.com/wld-200a.jpg,current:200A;duty_cycle:60%;voltage:220V;warranty:1 year

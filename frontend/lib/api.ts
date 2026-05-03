@@ -82,12 +82,48 @@ export const rfqApi = {
     api.get(`/rfq/broadcasts/${broadcastId}/quotes-comparison`).then((r) => r.data),
 };
 
+// Cart
+export const cartApi = {
+  get: (accountId: number) => api.get(`/cart/${accountId}`).then((r) => r.data),
+  add: (d: { loyalty_account_id: number; product_id: number; quantity: number; unit_price: number }) =>
+    api.post('/cart/items', d).then((r) => r.data),
+  remove: (itemId: number) => api.delete(`/cart/items/${itemId}`).then((r) => r.data),
+  checkout: (d: { loyalty_account_id: number; coupon_code?: string }) =>
+    api.post('/cart/checkout', d).then((r) => r.data),
+};
+
+// Payments
+export const paymentApi = {
+  createIntent: (d: { order_id: number; gateway?: string; amount?: number; currency?: string }) =>
+    api.post('/payments/intent', d).then((r) => r.data),
+  confirm: (txnId: number, d?: { payment_method?: string }) =>
+    api.post(`/payments/${txnId}/confirm`, d || {}).then((r) => r.data),
+  refund: (txnId: number, d?: { amount?: number; reason?: string }) =>
+    api.post(`/payments/${txnId}/refund`, d || {}).then((r) => r.data),
+  gateways: () => api.get('/payments/gateways').then((r) => r.data),
+};
+
 // Analytics
 export const analyticsApi = {
   overview: () => api.get('/crm/dashboard').then((r) => r.data),
   funnel: () => api.get('/crm/funnel').then((r) => r.data),
   marketing: () => api.get('/analytics/sales/drill-down').then((r) => r.data),
   salesPredictive: () => api.get('/analytics/sales/predictive').then((r) => r.data),
+  auditLogs: (params?: { limit?: number; action?: string }) =>
+    api.get('/analytics/audit-logs', { params }).then((r) => r.data),
+  enrichVendor: (name: string) =>
+    api.get(`/enrichment/vendors/${encodeURIComponent(name)}`).then((r) => r.data),
+};
+
+// Monitoring
+export const monitoringApi = {
+  dashboard: () => api.get('/monitoring/dashboard').then((r) => r.data),
+};
+
+// Discovery / Connectors
+export const discoveryApi = {
+  trigger: (source?: string) =>
+    api.post('/discovery/trigger', { source }).then((r) => r.data),
 };
 
 export default api;

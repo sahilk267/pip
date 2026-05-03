@@ -46,6 +46,7 @@ from ..services.order_feedback import (
     order_deal_feedback_summary,
     record_order_deal_feedback,
 )
+from ..services import email_service
 
 router = APIRouter()
 
@@ -66,6 +67,20 @@ def create_order(payload: B2COrderCreate, db: Session = Depends(get_db)) -> B2CO
     except ValueError as exc:
         detail = str(exc)
         raise HTTPException(status_code=400, detail=detail) from exc
+
+    # Fire order confirmation email (non-blocking best-effort)
+    try:
+        addr = (payload.shipping_address or {}).get("email") or (payload.shipping_address or {}).get("contact_email")
+        if addr:
+            email_service.send_order_confirmation(
+                to=addr,
+                order_id=order.id,
+                total=float(payload.total_amount or 0),
+                currency=payload.currency or "USD",
+            )
+    except Exception:
+        pass  # Email failure must never break order creation
+
     return B2COrderResponse.model_validate(order)
 
 

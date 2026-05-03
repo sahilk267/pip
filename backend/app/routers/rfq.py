@@ -122,6 +122,8 @@ def vendor_suggestions(
 
 @router.post('/api/v1/rfq/broadcasts', response_model=RFQBroadcastResponse)
 def create_broadcast(payload: RFQBroadcastCreate, db: Session = Depends(get_db)) -> RFQBroadcastResponse:
+    import threading
+    from ..services import email_service
     try:
         check_rfq_rate_limit(db, lead_id=payload.lead_id, performed_by=payload.performed_by)
         broadcast, _ = create_rfq_broadcast(
@@ -137,6 +139,23 @@ def create_broadcast(payload: RFQBroadcastCreate, db: Session = Depends(get_db))
         detail = str(exc)
         code = status.HTTP_429_TOO_MANY_REQUESTS if 'rate limit exceeded' in detail.lower() else 400
         raise HTTPException(status_code=code, detail=detail) from exc
+
+    # Send RFQ notification emails to selected vendors in background
+    if payload.vendor_ids:
+        def _send_rfq_emails():
+            from ..database import SessionLocal
+            with SessionLocal() as _db:
+                for vid in (payload.vendor_ids or []):
+                    vendor = _db.query(models.Vendor).filter(models.Vendor.id == vid).first()
+                    if vendor and vendor.contact_email:
+                        email_service.send_rfq_vendor_notification(
+                            to=vendor.contact_email,
+                            vendor_name=vendor.name,
+                            rfq_title=payload.message or f'RFQ-{broadcast.id:04d}',
+                            rfq_id=broadcast.id,
+                        )
+        threading.Thread(target=_send_rfq_emails, daemon=True).start()
+
     return RFQBroadcastResponse.model_validate(broadcast)
 
 

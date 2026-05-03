@@ -8,8 +8,6 @@ from ..services.monitoring import watch_schema_changes
 router = APIRouter()
 
 
-@router.get('/api/v1/security/monitoring/dashboard', response_model=schemas.MonitoringDashboard)
-@router.get('/api/v1/security/ddos/protection', response_model=schemas.MonitoringDashboard)
 @router.get('/api/v1/monitoring/dashboard', response_model=schemas.MonitoringDashboard)
 def monitoring_dashboard(db: Session = Depends(get_db)) -> schemas.MonitoringDashboard:
     sources = (

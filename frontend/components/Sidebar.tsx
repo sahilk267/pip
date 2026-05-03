@@ -13,6 +13,9 @@ import {
   BarChart3,
   LogOut,
   ChevronRight,
+  Bell,
+  CreditCard,
+  ShoppingBag,
 } from 'lucide-react';
 
 const nav = [
@@ -22,7 +25,10 @@ const nav = [
   { href: '/crm', label: 'CRM / Leads', icon: Users },
   { href: '/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/rfq', label: 'RFQ', icon: FileText },
+  { href: '/cart', label: 'Cart', icon: ShoppingBag },
+  { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/notifications', label: 'Notifications', icon: Bell },
 ];
 
 export default function Sidebar() {

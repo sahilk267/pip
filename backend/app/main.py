@@ -25,6 +25,9 @@ from .routers.escalations import router as escalations_router
 from .routers.market_intelligence import router as market_intelligence_router
 from .routers.analytics import router as analytics_router
 from .auth.router import router as auth_router
+from .routers.payments import router as payments_router
+from .routers.tasks import router as tasks_router
+from .services import task_runner
 
 _STATIC = Path(__file__).resolve().parent / 'static'
 
@@ -32,7 +35,10 @@ _STATIC = Path(__file__).resolve().parent / 'static'
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    task_runner.start_workers()
+    task_runner.start_scheduler()
     yield
+    task_runner.stop_workers()
 
 
 app = FastAPI(
@@ -181,3 +187,5 @@ app.include_router(messages_router)
 app.include_router(escalations_router)
 app.include_router(market_intelligence_router)
 app.include_router(analytics_router)
+app.include_router(payments_router)
+app.include_router(tasks_router)

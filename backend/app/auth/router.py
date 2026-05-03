@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -8,6 +9,7 @@ from ..database import get_db
 from ..auth.utils import create_access_token, decode_token, get_password_hash, verify_password
 from ..auth.schemas import PasswordChange, Token, UserLogin, UserRegister, UserResponse
 from ..auth.user_model import User
+from ..services import email_service
 
 router = APIRouter(prefix='/api/v1/auth', tags=['auth'])
 security = HTTPBearer(auto_error=False)
@@ -71,6 +73,12 @@ def register(payload: UserRegister, db: Session = Depends(get_db)) -> Token:
     db.commit()
     db.refresh(user)
     token = create_access_token({'sub': str(user.id), 'email': user.email, 'role': user.role})
+    # Send welcome email in background (non-blocking)
+    threading.Thread(
+        target=email_service.send_welcome_email,
+        args=(user.email, user.full_name or user.email, user.role),
+        daemon=True,
+    ).start()
     return Token(access_token=token, user=UserResponse.model_validate(user))
 
 

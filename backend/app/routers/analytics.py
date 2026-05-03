@@ -454,14 +454,6 @@ def get_phase4_anonymized_data(
     }
 
 
-@router.get('/api/v1/security/dlp/anonymized-data')
-@router.get('/api/v1/security/privacy/anonymized-data')
-def get_security_privacy_anonymized_data(
-    limit: int = Query(default=100, ge=1, le=500),
-    segment: str | None = Query(default=None),
-    db: Session = Depends(get_db),
-) -> dict:
-    return get_phase4_anonymized_data(limit=limit, segment=segment, db=db)
 
 
 # ---------------------------------------------------------------------------
@@ -514,16 +506,6 @@ def get_phase4_audit_logs(
     ]
 
 
-@router.get('/api/v1/security/access-review/audit-logs')
-@router.get('/api/v1/security/audit-logs')
-def get_security_audit_logs(
-    entity_type: str | None = Query(default=None),
-    action: str | None = Query(default=None),
-    performed_by: str | None = Query(default=None),
-    limit: int = Query(default=100, ge=1, le=500),
-    db: Session = Depends(get_db),
-) -> list[dict]:
-    return get_phase4_audit_logs(entity_type=entity_type, action=action, performed_by=performed_by, limit=limit, db=db)
 
 
 # ---------------------------------------------------------------------------
@@ -971,14 +953,6 @@ def get_phase4_escalation_playbook(
     }
 
 
-@router.get('/api/v1/security/incident-response/playbook')
-def get_security_incident_response_playbook(
-    entity_type: str | None = Query(default=None),
-    limit: int = Query(default=50, ge=1, le=200),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Security incident response playbook for breach and escalation workflows."""
-    return get_phase4_escalation_playbook(entity_type=entity_type, limit=limit, db=db)
 
 
 # ---------------------------------------------------------------------------
@@ -1032,12 +1006,6 @@ def get_phase4_compliance_records(
     return result
 
 
-@router.get('/api/v1/security/governance/compliance-records')
-def get_security_governance_compliance_records(
-    window_minutes: int = Query(default=1440, ge=1),
-    db: Session = Depends(get_db),
-) -> dict:
-    return get_phase4_compliance_records(window_minutes=window_minutes, db=db)
 
 
 # ---------------------------------------------------------------------------
