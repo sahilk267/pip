@@ -85,6 +85,23 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 - Removed passlib dependency (bcrypt incompatibility) — use bcrypt directly
 - Enrichment CSVs present in `data/enrichment/`
 
+## RFQ Workflow (NEW)
+- **Step 1: Product Details** — Enter what you're sourcing (name, qty, target price, deadline, notes)
+- **Step 2: Vendor Matching** — Smart algorithm ranks 50 vendors by:
+  - Category fit (0–50 pts) — product keywords mapped to 10 industry banks
+  - Name relevance (0–15 pts) — keyword overlap with vendor metadata
+  - Quote history (0–35 pts) — past response rate + price competitiveness
+  - Auto-selects "good" and above confidence vendors
+- **Step 3: Broadcast** — Send RFQ to selected vendors via email
+- **Quotes View** — After vendors respond, side-by-side comparison table sorted by:
+  - Unit price (lowest first)
+  - Lead time (fastest)
+  - Response speed (hours to respond)
+  - Parse confidence (0–100%)
+- **Endpoints:**
+  - `GET /api/v1/rfq/vendor-suggestions?product_name=...&target_price=...&limit=10` — Returns ranked vendors with scoring breakdown
+  - `GET /api/v1/rfq/broadcasts/{id}/quotes-comparison` — Returns sorted quote comparison with response metrics
+
 ## Env Vars
 - `DATABASE_URL` — PostgreSQL URL for production
 - `JWT_SECRET_KEY` — JWT signing secret (MUST change in prod)

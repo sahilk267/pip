@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import Optional
 
+from .. import models
 from ..database import get_db
 from ..schemas import (
     RFQBroadcastCreate,
@@ -137,6 +138,67 @@ def create_broadcast(payload: RFQBroadcastCreate, db: Session = Depends(get_db))
         code = status.HTTP_429_TOO_MANY_REQUESTS if 'rate limit exceeded' in detail.lower() else 400
         raise HTTPException(status_code=code, detail=detail) from exc
     return RFQBroadcastResponse.model_validate(broadcast)
+
+
+@router.get('/api/v1/rfq/broadcasts/{broadcast_id}/quotes-comparison')
+def quotes_comparison(
+    broadcast_id: int,
+    db: Session = Depends(get_db),
+) -> dict:
+    broadcast = db.query(models.RFQBroadcast).filter(models.RFQBroadcast.id == int(broadcast_id)).first()
+    if not broadcast:
+        raise HTTPException(status_code=404, detail='Broadcast not found')
+
+    from sqlalchemy import func
+    rows = (
+        db.query(
+            models.RFQParsedQuote,
+            models.Vendor.name,
+            models.RFQVendorResponse.responded_at,
+        )
+        .join(models.Vendor, models.RFQParsedQuote.vendor_id == models.Vendor.id)
+        .join(models.RFQVendorResponse, models.RFQParsedQuote.response_id == models.RFQVendorResponse.id)
+        .filter(models.RFQParsedQuote.attempt_id.in_(
+            db.query(models.RFQDeliveryAttempt.id)
+            .filter(models.RFQDeliveryAttempt.broadcast_id == int(broadcast_id))
+        ))
+        .all()
+    )
+
+    quotes = []
+    for quote, vendor_name, responded_at in rows:
+        response_speed_hrs = None
+        if quote.created_at and responded_at:
+            delta = (responded_at - quote.created_at).total_seconds() / 3600
+            response_speed_hrs = round(delta, 1)
+
+        quotes.append({
+            'id': quote.id,
+            'vendor_id': quote.vendor_id,
+            'vendor_name': vendor_name,
+            'unit_price': quote.unit_price,
+            'total_price': quote.total_price,
+            'quantity': quote.quantity,
+            'lead_time_days': quote.lead_time_days,
+            'currency': quote.currency,
+            'confidence': quote.confidence,
+            'response_speed_hours': response_speed_hrs,
+            'responded_at': responded_at.isoformat() if responded_at else None,
+            'created_at': quote.created_at.isoformat() if quote.created_at else None,
+        })
+
+    quotes.sort(key=lambda q: (
+        q['unit_price'] if q['unit_price'] is not None else float('inf'),
+        q['lead_time_days'] if q['lead_time_days'] is not None else float('inf'),
+        q['response_speed_hours'] if q['response_speed_hours'] is not None else float('inf'),
+    ))
+
+    return {
+        'broadcast_id': broadcast.id,
+        'total_quotes': len(quotes),
+        'currency': quotes[0]['currency'] if quotes else 'USD',
+        'quotes': quotes,
+    }
 
 
 @router.get('/api/v1/rfq/broadcasts', response_model=list[RFQBroadcastResponse])

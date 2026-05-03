@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   FileText, Plus, Clock, CheckCircle, Search, Star,
   ChevronRight, ChevronLeft, Zap, Building2, TrendingUp,
-  BarChart2, Users, AlertCircle, X,
+  BarChart2, Users, AlertCircle, X, DollarSign, Truck, Zap as Speed,
 } from 'lucide-react';
 import { rfqApi } from '@/lib/api';
 
@@ -36,6 +36,28 @@ interface VendorMatch {
     avg_quoted_price: number | null;
     quote_count: number;
   };
+}
+
+interface Quote {
+  id: number;
+  vendor_id: number;
+  vendor_name: string;
+  unit_price?: number;
+  total_price?: number;
+  quantity?: number;
+  lead_time_days?: number;
+  currency: string;
+  confidence: number;
+  response_speed_hours?: number;
+  responded_at?: string;
+  created_at?: string;
+}
+
+interface QuoteComparison {
+  broadcast_id: number;
+  total_quotes: number;
+  currency: string;
+  quotes: Quote[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -90,7 +112,7 @@ function ConfidenceStars({ confidence }: { confidence: string }) {
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 
-type Step = 'list' | 'details' | 'match' | 'confirm';
+type Step = 'list' | 'details' | 'match' | 'confirm' | 'quotes';
 
 const INIT_FORM = {
   product_name: '', quantity: '1', currency: 'USD',
@@ -108,6 +130,9 @@ export default function RFQPage() {
   const [saving, setSaving]       = useState(false);
   const [matchErr, setMatchErr]   = useState('');
   const [saveErr, setSaveErr]     = useState('');
+  const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
+  const [comparison, setComparison] = useState<QuoteComparison | null>(null);
+  const [loadingQuotes, setLoadingQuotes] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -126,6 +151,22 @@ export default function RFQPage() {
     setSelected(new Set());
     setMatchErr('');
     setSaveErr('');
+    setSelectedRfq(null);
+    setComparison(null);
+  }
+
+  async function viewQuotes(rfq: RFQ) {
+    setSelectedRfq(rfq);
+    setLoadingQuotes(true);
+    try {
+      const data = await rfqApi.quotesComparison(rfq.id);
+      setComparison(data);
+      setStep('quotes');
+    } catch {
+      setComparison(null);
+    } finally {
+      setLoadingQuotes(false);
+    }
   }
 
   const f = (k: keyof typeof form) =>
@@ -549,6 +590,132 @@ export default function RFQPage() {
         </div>
       )}
 
+      {/* ── Quote Comparison View ──────────────────────────────────────────── */}
+      {step === 'quotes' && selectedRfq && (
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="bg-[#1a232e] border border-[#2a3540] rounded-xl p-4">
+            <button
+              onClick={resetFlow}
+              className="text-xs text-[#9aacbc] hover:text-white flex items-center gap-1 mb-3 transition-colors"
+            >
+              <ChevronLeft size={12} /> Back to RFQs
+            </button>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <FileText size={18} className="text-blue-400" />
+                  RFQ #{selectedRfq.id} — Quote Comparison
+                </h2>
+                <p className="text-xs text-[#9aacbc] mt-1">
+                  {selectedRfq.message?.split('\n')[0]}
+                </p>
+              </div>
+              <span className={`text-xs px-2.5 py-1 rounded-full ${statusColor[selectedRfq.status] ?? 'bg-[#2a3540] text-[#9aacbc]'}`}>
+                {selectedRfq.status.replace('_', ' ')}
+              </span>
+            </div>
+          </div>
+
+          {/* Quotes table */}
+          {loadingQuotes ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center gap-2 text-sm text-[#9aacbc]">
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Loading quotes…
+              </div>
+            </div>
+          ) : !comparison || comparison.quotes.length === 0 ? (
+            <div className="bg-[#1a232e] border border-[#2a3540] rounded-xl p-8 text-center">
+              <BarChart2 size={32} className="text-[#2a3540] mx-auto mb-3" />
+              <p className="text-sm text-[#9aacbc]">No vendor quotes yet.</p>
+              <p className="text-xs text-[#4a5c6a] mt-1">Vendors will respond to your RFQ as they receive it.</p>
+            </div>
+          ) : (
+            <div className="bg-[#1a232e] border border-[#2a3540] rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#2a3540] bg-[#0f1419]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9aacbc]">Rank</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9aacbc]">Vendor</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9aacbc] flex items-center gap-1">
+                        <DollarSign size={11} /> Unit Price
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9aacbc]">Total</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9aacbc] flex items-center gap-1">
+                        <Truck size={11} /> Lead Time
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9aacbc] flex items-center gap-1">
+                        <Speed size={11} /> Response Speed
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9aacbc]">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparison.quotes.map((q, idx) => {
+                      const priceMatch = idx === 0;
+                      const leadTimeMatch = q.lead_time_days === Math.min(...comparison.quotes.map((x) => x.lead_time_days ?? Infinity));
+                      const speedMatch = q.response_speed_hours === Math.min(...comparison.quotes.map((x) => x.response_speed_hours ?? Infinity));
+                      return (
+                        <tr key={q.id} className={`border-b border-[#2a3540] last:border-0 hover:bg-[#1e2c3a] transition-colors ${
+                          idx === 0 ? 'bg-emerald-600/5' : ''
+                        }`}>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                              idx === 0 ? 'bg-emerald-600/30 text-emerald-400' :
+                              idx === 1 ? 'bg-[#9aacbc]/20 text-[#9aacbc]' :
+                              idx === 2 ? 'bg-orange-800/30 text-orange-500' :
+                              'bg-[#1e2c3a] text-[#4a5c6a]'
+                            }`}>
+                              {idx + 1}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-medium text-white">{q.vendor_name}</td>
+                          <td className={`px-4 py-3 font-semibold ${priceMatch ? 'text-emerald-400' : 'text-white'}`}>
+                            {q.unit_price ? `${comparison.currency} ${q.unit_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                            {priceMatch && q.unit_price && (
+                              <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-emerald-600/20 text-emerald-400 rounded">Best</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-[#9aacbc]">
+                            {q.total_price ? `${comparison.currency} ${q.total_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                          </td>
+                          <td className={`px-4 py-3 font-medium ${leadTimeMatch && q.lead_time_days ? 'text-emerald-400' : 'text-white'}`}>
+                            {q.lead_time_days ? `${q.lead_time_days} days` : '—'}
+                            {leadTimeMatch && q.lead_time_days && (
+                              <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-blue-600/20 text-blue-400 rounded">Fastest</span>
+                            )}
+                          </td>
+                          <td className={`px-4 py-3 font-medium ${speedMatch && q.response_speed_hours ? 'text-emerald-400' : 'text-white'}`}>
+                            {q.response_speed_hours ? `${q.response_speed_hours}h` : '—'}
+                            {speedMatch && q.response_speed_hours && (
+                              <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-purple-600/20 text-purple-400 rounded">Quick</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="w-full bg-[#0f1419] rounded h-1.5 overflow-hidden">
+                              <div
+                                className="h-full bg-blue-500 transition-all"
+                                style={{ width: `${Math.min(q.confidence * 100, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-[#6a7c8c] mt-1">{(q.confidence * 100).toFixed(0)}%</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-3 border-t border-[#2a3540] bg-[#0f1419] text-xs text-[#9aacbc]">
+                Sorted by: unit price (lowest), lead time (fastest), response speed (quickest)
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── RFQ List ────────────────────────────────────────────────────────── */}
       {step === 'list' && (
         <>
@@ -569,7 +736,11 @@ export default function RFQPage() {
           ) : (
             <div className="grid gap-3">
               {rfqs.map((rfq) => (
-                <div key={rfq.id} className="bg-[#1a232e] border border-[#2a3540] rounded-xl p-4 hover:border-[#3a4c5a] transition-colors">
+                <button
+                  key={rfq.id}
+                  onClick={() => viewQuotes(rfq)}
+                  className="text-left w-full bg-[#1a232e] border border-[#2a3540] rounded-xl p-4 hover:border-[#3a4c5a] hover:bg-[#1e2c3a] transition-colors"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -591,8 +762,12 @@ export default function RFQPage() {
                         <span>by {rfq.performed_by}</span>
                       </div>
                     </div>
+                    <div className="flex-shrink-0 flex items-center gap-2">
+                      <span className="text-xs text-[#9aacbc]">View quotes</span>
+                      <ChevronRight size={14} className="text-[#4a5c6a]" />
+                    </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
