@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "umlJCD51ipMIuo23xorHv"
+uri = "file://PROJECT_STATUS.md"
+type = "text"
+title = "Procurement Intelligence — Deep Status Report"
