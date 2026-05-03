@@ -76,6 +76,8 @@ export const rfqApi = {
     api.get('/rfq/broadcasts', { params }).then((r) => r.data),
   create: (d: object) => api.post('/rfq/broadcasts', d).then((r) => r.data),
   responses: (id: number) => api.get(`/rfq/broadcasts/${id}/responses`).then((r) => r.data),
+  vendorSuggestions: (params: { product_name: string; target_price?: number; limit?: number }) =>
+    api.get('/rfq/vendor-suggestions', { params }).then((r) => r.data),
 };
 
 // Analytics

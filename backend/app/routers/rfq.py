@@ -84,8 +84,39 @@ from ..services.rfq_quote_authenticity import (
 )
 from ..services.rfq_escalation import list_escalation_cases, run_automated_escalation
 from ..services.versioning import list_entity_versions, rollback_quote_version
+from ..services.vendor_matching import rank_vendors_for_rfq
 
 router = APIRouter()
+
+
+@router.get('/api/v1/rfq/vendor-suggestions')
+def vendor_suggestions(
+    product_name: str = Query(..., min_length=2, max_length=200),
+    target_price: Optional[float] = Query(default=None, ge=0),
+    limit: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    matches = rank_vendors_for_rfq(
+        db,
+        product_name=product_name,
+        target_price=target_price,
+        limit=limit,
+    )
+    return [
+        {
+            'vendor_id': m.vendor_id,
+            'name': m.name,
+            'email': m.email,
+            'industry': m.industry,
+            'category': m.category,
+            'category_confidence': m.category_confidence,
+            'score': m.score,
+            'confidence': m.confidence,
+            'score_breakdown': m.score_breakdown,
+            'quote_stats': m.quote_stats,
+        }
+        for m in matches
+    ]
 
 
 @router.post('/api/v1/rfq/broadcasts', response_model=RFQBroadcastResponse)
