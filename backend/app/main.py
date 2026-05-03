@@ -27,6 +27,8 @@ from .routers.analytics import router as analytics_router
 from .auth.router import router as auth_router
 from .routers.payments import router as payments_router
 from .routers.tasks import router as tasks_router
+from .routers.vendor_engagement import router as vendor_engagement_router
+from .routers.quote_negotiation import router as quote_negotiation_router
 from .services import task_runner
 
 _STATIC = Path(__file__).resolve().parent / 'static'
@@ -189,3 +191,5 @@ app.include_router(market_intelligence_router)
 app.include_router(analytics_router)
 app.include_router(payments_router)
 app.include_router(tasks_router)
+app.include_router(vendor_engagement_router)
+app.include_router(quote_negotiation_router)

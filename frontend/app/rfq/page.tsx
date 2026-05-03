@@ -7,6 +7,9 @@ import {
   BarChart2, Users, AlertCircle, X, DollarSign, Truck, Zap as Speed,
 } from 'lucide-react';
 import { rfqApi } from '@/lib/api';
+import { QuoteDashboard } from '@/components/QuoteDashboard';
+import { VendorBotPanel } from '@/components/VendorBotPanel';
+import { QuoteNegotiationPanel } from '@/components/QuoteNegotiationPanel';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -133,6 +136,7 @@ export default function RFQPage() {
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [comparison, setComparison] = useState<QuoteComparison | null>(null);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -632,9 +636,21 @@ export default function RFQPage() {
               <p className="text-xs text-[#4a5c6a] mt-1">Vendors will respond to your RFQ as they receive it.</p>
             </div>
           ) : (
-            <div className="bg-[#1a232e] border border-[#2a3540] rounded-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+            <>
+              {/* Quote Dashboard with Live Updates */}
+              <QuoteDashboard broadcastId={selectedRfq.id} currency={comparison.currency} />
+
+              {/* Vendor Bot Panel */}
+              <VendorBotPanel
+                rfqId={selectedRfq.id}
+                vendors={matches.length > 0 ? matches.map((m) => ({ id: m.vendor_id, name: m.name, email: m.email })) : []}
+                quotes={comparison.quotes}
+              />
+
+              {/* Quotes Comparison Table */}
+              <div className="bg-[#1a232e] border border-[#2a3540] rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#2a3540] bg-[#0f1419]">
                       <th className="px-4 py-3 text-left text-xs font-semibold text-[#9aacbc]">Rank</th>
@@ -657,10 +673,15 @@ export default function RFQPage() {
                       const priceMatch = idx === 0;
                       const leadTimeMatch = q.lead_time_days === Math.min(...comparison.quotes.map((x) => x.lead_time_days ?? Infinity));
                       const speedMatch = q.response_speed_hours === Math.min(...comparison.quotes.map((x) => x.response_speed_hours ?? Infinity));
+                      const isSelected = selectedQuote?.id === q.id;
                       return (
-                        <tr key={q.id} className={`border-b border-[#2a3540] last:border-0 hover:bg-[#1e2c3a] transition-colors ${
-                          idx === 0 ? 'bg-emerald-600/5' : ''
-                        }`}>
+                        <>
+                        <tr 
+                          key={q.id}
+                          onClick={() => setSelectedQuote(isSelected ? null : q)}
+                          className={`border-b border-[#2a3540] last:border-0 hover:bg-[#1e2c3a] transition-colors cursor-pointer ${
+                            idx === 0 ? 'bg-emerald-600/5' : ''
+                          } ${isSelected ? 'bg-blue-600/10' : ''}`}>
                           <td className="px-4 py-3">
                             <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
                               idx === 0 ? 'bg-emerald-600/30 text-emerald-400' :
@@ -703,6 +724,14 @@ export default function RFQPage() {
                             <span className="text-[10px] text-[#6a7c8c] mt-1">{(q.confidence * 100).toFixed(0)}%</span>
                           </td>
                         </tr>
+                        {isSelected && (
+                          <tr className="bg-blue-600/5 border-b border-[#2a3540]">
+                            <td colSpan={7} className="p-4">
+                              <QuoteNegotiationPanel quote={q} />
+                            </td>
+                          </tr>
+                        )}
+                        </>
                       );
                     })}
                   </tbody>
@@ -712,6 +741,7 @@ export default function RFQPage() {
                 Sorted by: unit price (lowest), lead time (fastest), response speed (quickest)
               </div>
             </div>
+            </>
           )}
         </div>
       )}
