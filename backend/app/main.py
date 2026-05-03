@@ -29,6 +29,10 @@ from .routers.payments import router as payments_router
 from .routers.tasks import router as tasks_router
 from .routers.vendor_engagement import router as vendor_engagement_router
 from .routers.quote_negotiation import router as quote_negotiation_router
+from .routers.analytics_extended import router as analytics_extended_router
+from .routers.invoices import router as invoices_router
+from .routers.rfq_templates import router as rfq_templates_router
+from .routers.vendor_recommendations import router as vendor_recommendations_router
 from .services import task_runner
 
 _STATIC = Path(__file__).resolve().parent / 'static'
@@ -193,3 +197,7 @@ app.include_router(payments_router)
 app.include_router(tasks_router)
 app.include_router(vendor_engagement_router)
 app.include_router(quote_negotiation_router)
+app.include_router(analytics_extended_router)
+app.include_router(invoices_router)
+app.include_router(rfq_templates_router)
+app.include_router(vendor_recommendations_router)
