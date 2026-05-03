@@ -24,5 +24,6 @@ def init_db():
     # Register all models on Base.metadata (import side effects).
     from . import models as _models  # noqa: F401
     from . import crm_models as _crm_models  # noqa: F401
+    from .auth import user_model as _user_model  # noqa: F401
 
     Base.metadata.create_all(bind=engine)

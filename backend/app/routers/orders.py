@@ -232,15 +232,6 @@ def create_order_feedback(
     return OrderDealFeedbackResponse.model_validate(row)
 
 
-@router.get('/api/v1/orders/b2c/{order_id}/feedback', response_model=list[OrderDealFeedbackResponse])
-def get_order_feedback(order_id: int, db: Session = Depends(get_db)) -> list[OrderDealFeedbackResponse]:
-    try:
-        rows = list_order_deal_feedback(db, order_id=order_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return [OrderDealFeedbackResponse.model_validate(row) for row in rows]
-
-
 @router.get('/api/v1/orders/b2c/feedback/summary', response_model=OrderDealFeedbackSummary)
 def get_order_feedback_summary(
     window_days: int = Query(default=30, ge=1, le=365),
@@ -248,6 +239,15 @@ def get_order_feedback_summary(
 ) -> OrderDealFeedbackSummary:
     payload = order_deal_feedback_summary(db, window_days=window_days)
     return OrderDealFeedbackSummary(**payload)
+
+
+@router.get('/api/v1/orders/b2c/{order_id}/feedback', response_model=list[OrderDealFeedbackResponse])
+def get_order_feedback(order_id: int, db: Session = Depends(get_db)) -> list[OrderDealFeedbackResponse]:
+    try:
+        rows = list_order_deal_feedback(db, order_id=order_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return [OrderDealFeedbackResponse.model_validate(row) for row in rows]
 
 
 @router.post('/api/v1/payments/gateways', response_model=PaymentGatewayConfigResponse)
