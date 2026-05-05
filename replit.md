@@ -52,6 +52,7 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 | Notifications | `/notifications` | Alerts + audit log viewer |
 | RFQ | `/rfq` | RFQ broadcasts + create |
 | RFQ Templates | `/rfq/templates` | Bulk RFQ templates: create, add products, reuse |
+| RFQ Analytics | `/rfq/analytics` | Response rates, avg quote prices, vendor win rates per broadcast |
 | Analytics | `/analytics` | Funnel bar chart + pipeline trend |
 | Price Trends | `/price-trends` | Historical price tracking, benchmarks, seed button |
 | Suppliers | `/suppliers` | Scorecard (A/B/C grades) + smart vendor recommendations |
@@ -71,6 +72,8 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 - 72 volume discount tiers (3-tier per vendor/category pair)
 - 6 cost-saving opportunities (bulk discount, alt vendor, consolidation)
 - 10 sample invoices (mix of draft/sent/paid, with vendor names and line items)
+- 8 RFQ broadcasts + 19 vendor responses + 19 parsed quotes (across all major categories)
+- 4 RFQ templates (Electronics, Manufacturing, Software, Logistics) each with 3–4 line items
 
 ## User preferences
 - Everything should be documented and updated in replit.md
@@ -91,6 +94,7 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 - Extended models: `backend/app/models_extended.py`
 - Seed router: `backend/app/routers/seed.py`
 - Analytics + supplier + cost router: `backend/app/routers/analytics_extended.py`
+- RFQ analytics router: `backend/app/routers/rfq_analytics.py` → `GET /api/v1/rfq/analytics`
 - Invoice router: `backend/app/routers/invoices.py`
 - Price trends service: `backend/app/services/price_trends.py`
 - Supplier scoring service: `backend/app/services/supplier_scoring.py`

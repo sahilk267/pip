@@ -410,6 +410,164 @@ def seed_all(db: Session = Depends(get_db)) -> dict:
         db.commit()
     summary["rfq_templates"] = {"created": tmpl_created, "skipped_if_existing": tmpl_count >= 4}
 
+    # ── 10. RFQ Broadcasts + Responses + Parsed Quotes ─────────────────────────
+    bc_count = db.query(models.RFQBroadcast).count()
+    rfq_created = 0
+    if bc_count < 6 and vendor_objs:
+        RFQ_SCENARIOS = [
+            {
+                "message": "Q2 Electronics Components Sourcing",
+                "channel": "email",
+                "status": "delivered",
+                "categories": ["Electronics"],
+                "days_ago": 80,
+                "vendor_indices": [0, 1, 9],
+                "response_mask": [True, True, False],
+                "prices": [8.50, 9.20, None],
+                "lead_times": [21, 14, None],
+            },
+            {
+                "message": "Manufacturing Parts Bulk Order Q1",
+                "channel": "email",
+                "status": "delivered",
+                "categories": ["Manufacturing"],
+                "days_ago": 65,
+                "vendor_indices": [2, 3, 10],
+                "response_mask": [True, True, True],
+                "prices": [3.10, 2.85, 3.40],
+                "lead_times": [10, 7, 12],
+            },
+            {
+                "message": "Raw Materials Annual Contract",
+                "channel": "email",
+                "status": "delivered",
+                "categories": ["Raw Materials"],
+                "days_ago": 50,
+                "vendor_indices": [4, 5, 11],
+                "response_mask": [True, False, True],
+                "prices": [18.90, None, 22.10],
+                "lead_times": [14, None, 10],
+            },
+            {
+                "message": "Logistics & Freight Q3 Tender",
+                "channel": "email",
+                "status": "delivered",
+                "categories": ["Logistics"],
+                "days_ago": 38,
+                "vendor_indices": [6, 7, 12],
+                "response_mask": [True, True, False],
+                "prices": [3200.00, 2950.00, None],
+                "lead_times": [5, 3, None],
+            },
+            {
+                "message": "Software Licensing Renewal 2026",
+                "channel": "email",
+                "status": "delivered",
+                "categories": ["Software"],
+                "days_ago": 25,
+                "vendor_indices": [8, 9, 13],
+                "response_mask": [True, True, True],
+                "prices": [1150.00, 1200.00, 1080.00],
+                "lead_times": [1, 1, 2],
+            },
+            {
+                "message": "Chemical Compounds Spot Buy",
+                "channel": "email",
+                "status": "delivered",
+                "categories": ["Chemicals"],
+                "days_ago": 18,
+                "vendor_indices": [10, 11, 4],
+                "response_mask": [True, False, True],
+                "prices": [55.00, None, 61.50],
+                "lead_times": [7, None, 10],
+            },
+            {
+                "message": "Packaging Supplies H2 2026",
+                "channel": "email",
+                "status": "delivered",
+                "categories": ["Packaging"],
+                "days_ago": 10,
+                "vendor_indices": [13, 14, 12],
+                "response_mask": [True, True, True],
+                "prices": [0.95, 1.10, 1.05],
+                "lead_times": [5, 7, 6],
+            },
+            {
+                "message": "Electronics Reorder — Q3 Urgent",
+                "channel": "email",
+                "status": "delivered",
+                "categories": ["Electronics"],
+                "days_ago": 4,
+                "vendor_indices": [0, 1, 8],
+                "response_mask": [True, False, True],
+                "prices": [8.20, None, 9.00],
+                "lead_times": [10, None, 7],
+            },
+        ]
+
+        safe_vendors = vendor_objs
+        for scenario in RFQ_SCENARIOS:
+            bc_date = now - timedelta(days=scenario["days_ago"])
+            bc = models.RFQBroadcast(
+                channel=scenario["channel"],
+                status=scenario["status"],
+                message=scenario["message"],
+                performed_by="seed",
+                created_at=bc_date,
+            )
+            db.add(bc)
+            db.flush()
+
+            indices = scenario["vendor_indices"]
+            for pos, vi in enumerate(indices):
+                if vi >= len(safe_vendors):
+                    vi = vi % len(safe_vendors)
+                vendor = safe_vendors[vi]
+                attempt = models.RFQDeliveryAttempt(
+                    broadcast_id=bc.id,
+                    vendor_id=vendor.id,
+                    status="delivered",
+                    attempted_at=bc_date,
+                    delivered_at=bc_date + timedelta(minutes=random.randint(1, 30)),
+                )
+                db.add(attempt)
+                db.flush()
+
+                did_respond = scenario["response_mask"][pos]
+                if did_respond:
+                    resp_time = bc_date + timedelta(hours=random.randint(2, 72))
+                    unit_price = scenario["prices"][pos]
+                    resp = models.RFQVendorResponse(
+                        attempt_id=attempt.id,
+                        vendor_id=vendor.id,
+                        response_status="replied",
+                        response_text=f"We can supply at ${unit_price}/unit.",
+                        quoted_price=unit_price,
+                        responded_at=resp_time,
+                        recorded_by="seed",
+                    )
+                    db.add(resp)
+                    db.flush()
+
+                    lt = scenario["lead_times"][pos]
+                    qty = random.choice([100, 200, 500, 1000])
+                    db.add(models.RFQParsedQuote(
+                        response_id=resp.id,
+                        attempt_id=attempt.id,
+                        vendor_id=vendor.id,
+                        currency="USD",
+                        unit_price=unit_price,
+                        total_price=round(unit_price * qty, 2),
+                        quantity=qty,
+                        lead_time_days=lt,
+                        confidence=round(random.uniform(0.75, 0.98), 2),
+                        parser_version="seed-v1",
+                    ))
+            rfq_created += 1
+
+        db.commit()
+    summary["rfq_broadcasts"] = {"created": rfq_created, "skipped_if_existing": bc_count >= 6}
+
     summary["status"] = "ok"
     summary["seeded_at"] = now.isoformat()
     return summary

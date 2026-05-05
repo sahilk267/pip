@@ -34,6 +34,7 @@ from .routers.invoices import router as invoices_router
 from .routers.rfq_templates import router as rfq_templates_router
 from .routers.vendor_recommendations import router as vendor_recommendations_router
 from .routers.seed import router as seed_router
+from .routers.rfq_analytics import router as rfq_analytics_router
 from .services import task_runner
 
 _STATIC = Path(__file__).resolve().parent / 'static'
@@ -203,3 +204,4 @@ app.include_router(invoices_router)
 app.include_router(rfq_templates_router)
 app.include_router(vendor_recommendations_router)
 app.include_router(seed_router)
+app.include_router(rfq_analytics_router)
