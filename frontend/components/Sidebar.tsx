@@ -16,6 +16,11 @@ import {
   Bell,
   CreditCard,
   ShoppingBag,
+  Award,
+  Receipt,
+  TrendingUp,
+  DollarSign,
+  Copy,
 } from 'lucide-react';
 
 const nav = [
@@ -25,9 +30,14 @@ const nav = [
   { href: '/crm', label: 'CRM / Leads', icon: Users },
   { href: '/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/rfq', label: 'RFQ', icon: FileText },
+  { href: '/rfq/templates', label: 'RFQ Templates', icon: Copy },
   { href: '/cart', label: 'Cart', icon: ShoppingBag },
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/price-trends', label: 'Price Trends', icon: TrendingUp },
+  { href: '/suppliers', label: 'Suppliers', icon: Award },
+  { href: '/cost-optimization', label: 'Cost Optimizer', icon: DollarSign },
+  { href: '/invoices', label: 'Invoices', icon: Receipt },
   { href: '/notifications', label: 'Notifications', icon: Bell },
 ];
 

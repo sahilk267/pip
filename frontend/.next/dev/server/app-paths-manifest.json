@@ -1,3 +1,8 @@
 {
-  "/page": "app/page.js"
+  "/cost-optimization/page": "app/cost-optimization/page.js",
+  "/invoices/page": "app/invoices/page.js",
+  "/page": "app/page.js",
+  "/price-trends/page": "app/price-trends/page.js",
+  "/rfq/templates/page": "app/rfq/templates/page.js",
+  "/suppliers/page": "app/suppliers/page.js"
 }

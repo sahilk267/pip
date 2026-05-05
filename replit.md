@@ -88,11 +88,16 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 - `/products` — Product catalog + add form
 - `/crm` — Lead management with stage updates
 - `/orders` — B2C orders tracking
-- `/cart` — Shopping cart + checkout flow (new)
-- `/payments` — Payment gateway selection + intent creation (new)
-- `/notifications` — Alerts + audit log viewer (new)
+- `/cart` — Shopping cart + checkout flow
+- `/payments` — Payment gateway selection + intent creation
+- `/notifications` — Alerts + audit log viewer
 - `/rfq` — RFQ broadcasts + create
+- `/rfq/templates` — Bulk RFQ templates: create, add products, reuse patterns
 - `/analytics` — Charts (funnel bar, pipeline trend)
+- `/price-trends` — Historical price tracking, benchmarks, record price data
+- `/suppliers` — Supplier scorecard (ratings/grades) + smart vendor recommendations
+- `/cost-optimization` — Opportunities, spend analyzer, volume discount tiers
+- `/invoices` — Invoice list with status filters (draft/sent/paid)
 - `/login` — Auth (login + register toggle)
 
 ## Email Triggers (automatic)
@@ -137,6 +142,15 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 | `DEFAULT_PAYMENT_GATEWAY` | Default gateway | stripe |
 | `BACKEND_URL` | Backend URL for Next.js | http://localhost:8000 |
 
+## Extended Models (models_extended.py)
+All tables auto-created on startup via `init_db()`:
+- `price_history`, `price_benchmarks` — Price trend analytics
+- `supplier_scores`, `supplier_rating_history` — Supplier scoring
+- `invoices`, `invoice_items` — Invoice management
+- `rfq_templates`, `rfq_template_items` — Bulk RFQ templates
+- `vendor_rankings` — ML-based vendor recommendations
+- `cost_opportunities`, `discount_tiers` — Cost optimization
+
 ## Bug Fixes Applied
 - Route ordering fix in orders.py (feedback/summary before /{order_id}/feedback)
 - Replaced deprecated `@app.on_event('startup')` with `asynccontextmanager` lifespan
@@ -146,3 +160,6 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 - Fixed payment_gateway.py: `confirmed_at` → `paid_at`, removed invalid `order.payment_status`
 - Fixed log_audit() call signature in payment_gateway.py
 - Removed duplicate /security/ alias endpoints from monitoring.py and analytics.py
+- Fixed models_extended.py not imported in init_db() — all 6 feature tables now created
+- Fixed RFQ templates page: added useEffect mount call + changed JSON body → query params
+- Upgraded Next.js from 14.2.3 to 16.2.4 (security patches)
