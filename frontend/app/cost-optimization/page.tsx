@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingDown, Plus, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { DollarSign, TrendingDown, Plus, RefreshCw, AlertCircle, CheckCircle, Database } from 'lucide-react';
 
 interface Opportunity {
   opportunity_id: number;
@@ -37,10 +37,12 @@ export default function CostOptimizationPage() {
   const [analyzeResult, setAnalyzeResult] = useState<any>(null);
   const [savingTier, setSavingTier] = useState(false);
   const [tierMsg, setTierMsg] = useState('');
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState('');
 
   useEffect(() => {
     loadOpportunities();
-    fetch('/api/v1/vendors').then((r) => r.json()).then((d) => setVendors(d.vendors || [])).catch(() => {});
+    fetch('/api/v1/vendors').then((r) => r.json()).then((d) => setVendors(Array.isArray(d) ? d : (d.vendors || []))).catch(() => {});
   }, []);
 
   async function loadOpportunities() {
@@ -53,6 +55,25 @@ export default function CostOptimizationPage() {
       }
     } catch {}
     finally { setLoading(false); }
+  }
+
+  async function seedData() {
+    setSeeding(true);
+    setSeedMsg('');
+    try {
+      const res = await fetch('/api/v1/cost-optimization/seed', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setSeedMsg(`Created ${data.tiers_created} discount tiers and ${data.opportunities_created} opportunities.`);
+        await loadOpportunities();
+      } else {
+        setSeedMsg('Seed failed.');
+      }
+    } catch {
+      setSeedMsg('Error connecting to server.');
+    } finally {
+      setSeeding(false);
+    }
   }
 
   async function analyzeBulk() {
@@ -103,15 +124,33 @@ export default function CostOptimizationPage() {
   }
 
   const statusColor = (s: string) => s === 'implemented' ? 'text-emerald-400' : s === 'approved' ? 'text-blue-400' : s === 'rejected' ? 'text-red-400' : 'text-amber-400';
+  const typeLabel = (t: string) => t === 'bulk_discount' ? 'Bulk Discount' : t === 'alternative_vendor' ? 'Alt Vendor' : t === 'consolidation' ? 'Consolidation' : t;
+  const typeColor = (t: string) => t === 'bulk_discount' ? 'bg-blue-900/40 text-blue-400' : t === 'alternative_vendor' ? 'bg-purple-900/40 text-purple-400' : 'bg-amber-900/40 text-amber-400';
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <DollarSign size={20} className="text-emerald-400" /> Cost Optimization
-        </h1>
-        <p className="text-sm text-[#9aacbc] mt-0.5">Bulk discounts, volume pricing tiers, category spend analysis</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <DollarSign size={20} className="text-emerald-400" /> Cost Optimization
+          </h1>
+          <p className="text-sm text-[#9aacbc] mt-0.5">Bulk discounts, volume pricing tiers, category spend analysis</p>
+        </div>
+        <button
+          onClick={seedData}
+          disabled={seeding}
+          className="flex items-center gap-2 px-4 py-2 bg-[#1a232e] border border-emerald-600/50 hover:border-emerald-500 text-emerald-400 text-xs rounded transition-colors disabled:opacity-50"
+        >
+          {seeding ? <RefreshCw size={13} className="animate-spin" /> : <Database size={13} />}
+          {seeding ? 'Seeding...' : 'Seed Sample Data'}
+        </button>
       </div>
+
+      {seedMsg && (
+        <div className={`text-xs px-4 py-2 rounded border ${seedMsg.includes('Created') ? 'bg-emerald-900/20 border-emerald-700/40 text-emerald-400' : 'bg-red-900/20 border-red-700/40 text-red-400'}`}>
+          {seedMsg}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-[#2a3540]">
@@ -141,22 +180,25 @@ export default function CostOptimizationPage() {
           ) : opportunities.length === 0 ? (
             <div className="bg-[#1a232e] border border-[#2a3540] rounded-lg p-8 text-center">
               <TrendingDown size={32} className="text-[#4a5c6a] mx-auto mb-3" />
-              <p className="text-sm text-[#9aacbc]">No opportunities yet. Use the Analyze tab to find savings.</p>
+              <p className="text-sm text-[#9aacbc] mb-2">No opportunities yet.</p>
+              <p className="text-xs text-[#4a5c6a]">Click <strong className="text-emerald-400">Seed Sample Data</strong> above, or use the Analyze tab to find savings.</p>
             </div>
           ) : (
             opportunities.map((opp) => (
               <div key={opp.opportunity_id} className="bg-[#1a232e] border border-[#2a3540] rounded-lg p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded ${opp.type === 'bulk_discount' ? 'bg-blue-900/40 text-blue-400' : 'bg-purple-900/40 text-purple-400'}`}>
-                        {opp.type.replace('_', ' ')}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-xs px-2 py-0.5 rounded ${typeColor(opp.type)}`}>
+                        {typeLabel(opp.type)}
                       </span>
-                      <span className={`text-xs ${statusColor(opp.status)}`}>{opp.status}</span>
+                      <span className={`text-xs font-medium ${statusColor(opp.status)}`}>{opp.status}</span>
                     </div>
-                    <h3 className="text-sm font-semibold text-white mt-1">{opp.title}</h3>
+                    <h3 className="text-sm font-semibold text-white">{opp.title}</h3>
                     <p className="text-xs text-[#9aacbc] mt-0.5">
-                      Current spend: ${opp.current_cost.toFixed(2)} → Save ${opp.savings.toFixed(2)} ({opp.savings_pct.toFixed(1)}%)
+                      Current spend: <span className="text-white">${opp.current_cost.toLocaleString()}</span>
+                      {' '}→ Save <span className="text-emerald-400 font-bold">${opp.savings.toLocaleString()}</span>
+                      {' '}({opp.savings_pct.toFixed(1)}%)
                     </p>
                   </div>
                   <div className="text-right ml-4">
@@ -166,6 +208,15 @@ export default function CostOptimizationPage() {
                 </div>
               </div>
             ))
+          )}
+
+          {opportunities.length > 0 && (
+            <div className="bg-[#0f1419] rounded-lg p-3 flex items-center justify-between">
+              <p className="text-xs text-[#9aacbc]">Total potential savings</p>
+              <p className="text-base font-bold text-emerald-400">
+                ${opportunities.reduce((s, o) => s + o.savings, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+            </div>
           )}
         </div>
       )}
@@ -247,7 +298,7 @@ export default function CostOptimizationPage() {
                   <div className="bg-[#1a232e] border border-[#2a3540] rounded-lg p-4">
                     <div className="flex items-center gap-2">
                       <AlertCircle size={16} className="text-amber-400" />
-                      <p className="text-sm text-[#9aacbc]">No significant opportunities found. Add discount tiers to enable bulk analysis.</p>
+                      <p className="text-sm text-[#9aacbc]">No significant opportunities found. Add discount tiers first (or use Seed Data).</p>
                     </div>
                   </div>
                 )}
@@ -361,7 +412,7 @@ export default function CostOptimizationPage() {
                   <span>500+ units</span><span>$9.00 / unit</span>
                 </div>
               </div>
-              <p>Once tiers are set, the Analyze Spend tool can identify how much you'd save by ordering at a higher volume.</p>
+              <p>Once tiers are set, use <strong className="text-white">Seed Sample Data</strong> or the Analyze Spend tab to automatically find savings.</p>
             </div>
           </div>
         </div>

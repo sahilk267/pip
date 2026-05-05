@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Copy, Plus, RefreshCw, Package } from 'lucide-react';
+import { Copy, Plus, RefreshCw, Package, Database } from 'lucide-react';
 
 interface RFQTemplate {
   template_id: number;
@@ -27,6 +27,8 @@ export default function RFQTemplatesPage() {
   const [newTemplate, setNewTemplate] = useState({ name: '', category: 'Electronics', description: '' });
   const [showForm, setShowForm] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateDetail | null>(null);
   const [addingItem, setAddingItem] = useState(false);
   const [itemForm, setItemForm] = useState({ product_name: '', quantity: '', target_price: '', lead_time_days: '' });
@@ -44,6 +46,21 @@ export default function RFQTemplatesPage() {
   }, []);
 
   useEffect(() => { loadTemplates(); }, [loadTemplates]);
+
+  async function seedTemplates() {
+    setSeeding(true);
+    setSeedMsg('');
+    try {
+      const res = await fetch('/api/v1/seed-all', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        const n = data.rfq_templates?.created ?? 0;
+        setSeedMsg(n > 0 ? `${n} sample templates seeded!` : 'Templates already seeded.');
+        loadTemplates();
+      }
+    } catch { setSeedMsg('Seed failed.'); }
+    finally { setSeeding(false); }
+  }
 
   async function createTemplate() {
     if (!newTemplate.name || !newTemplate.category) return;
@@ -104,12 +121,23 @@ export default function RFQTemplatesPage() {
           </h1>
           <p className="text-sm text-[#9aacbc] mt-0.5">Save and reuse RFQ patterns for bulk multi-product sourcing</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded flex items-center gap-1 transition-colors"
-        >
-          <Plus size={14} /> New Template
-        </button>
+        <div className="flex items-center gap-2">
+          {seedMsg && <span className="text-xs text-emerald-400">{seedMsg}</span>}
+          <button
+            onClick={seedTemplates}
+            disabled={seeding}
+            className="px-3 py-2 bg-[#1a232e] border border-[#2a3540] hover:border-indigo-500 text-[#9aacbc] hover:text-white text-sm rounded flex items-center gap-1 transition-colors disabled:opacity-50"
+          >
+            {seeding ? <RefreshCw size={13} className="animate-spin" /> : <Database size={13} />}
+            Seed Sample Templates
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded flex items-center gap-1 transition-colors"
+          >
+            <Plus size={14} /> New Template
+          </button>
+        </div>
       </div>
 
       {showForm && (

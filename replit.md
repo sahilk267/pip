@@ -2,164 +2,96 @@
 
 AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, and analytics.
 
-## Architecture
+## Run & Operate
+| Command | Purpose |
+|---------|---------|
+| `cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload` | Run backend (dev) |
+| `cd frontend && npm run dev` | Run frontend (dev) |
+| `gunicorn --bind=0.0.0.0:5000 -k uvicorn.workers.UvicornWorker app.main:app` | Run backend (prod) |
+| `cd backend && pip install -r requirements.txt` | Install backend deps |
+| `POST /api/v1/seed-all` | Populate all sample data (vendors, products, leads, prices, scores, invoices) |
 
-### Backend (FastAPI)
-- **Location:** `backend/`
-- **Framework:** FastAPI + SQLAlchemy (SQLite dev / PostgreSQL prod)
-- **Port:** 8000 (development, console workflow)
-- **Entry point:** `backend/app/main.py`
-- **Workflow:** "Backend API" — `cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`
+**Required env vars (all optional — have safe defaults):** `DATABASE_URL`, `JWT_SECRET_KEY`, `STRIPE_SECRET_KEY`, `SENDGRID_API_KEY`, `SMTP_HOST/PORT/USER/PASS`, `EMAIL_FROM`, `DEFAULT_PAYMENT_GATEWAY`
 
-### Frontend (Next.js 14)
-- **Location:** `frontend/`
-- **Framework:** Next.js 14 + TypeScript + TailwindCSS
-- **Port:** 5000 (webview)
-- **Workflow:** "Start application" — `cd frontend && npm run dev`
-- **API Proxy:** `/api/*` → `http://localhost:8000/api/*` (via next.config.js rewrites)
+## Stack
+- **Backend:** FastAPI + SQLAlchemy (SQLite dev / PostgreSQL prod) · Python 3.11 · Uvicorn
+- **Frontend:** Next.js 16.2.4 + TypeScript + TailwindCSS
+- **Ports:** Backend 8000 · Frontend 5000 (proxied at `/api/*` → `localhost:8000`)
+- **Auth:** JWT HS256, 24h expiry
+- **ORM:** SQLAlchemy `create_all` (no migrations needed for dev)
 
-## Key Features (Implemented)
-- **Authentication:** JWT-based (register, login, RBAC roles: admin, sales_rep, customer, vendor)
-- **Vendor Management:** Ingestion, enrichment (CSV-based), categorization, 4 source connectors
-- **Product Catalog:** B2C products with SKU, pricing, category
-- **CRM / Leads:** Lead capture, stage tracking, funnel analytics, AB testing
-- **B2C Orders:** Order creation, fulfillment tracking, shipping, payment gateway, order confirmation email
-- **RFQ System:** Broadcast RFQs to vendors, collect responses, parse quotes, negotiate; vendor notification emails
-- **Payment Gateway:** Stripe / Razorpay / Mock — intent → confirm → refund lifecycle with audit trail
-- **Email Service:** SMTP / SendGrid / Console fallback — welcome, order confirmation, vendor notifications
-- **Background Tasks:** In-process thread-pool (3 workers) + periodic scheduler — no Redis needed
-- **Marketing:** Campaign dispatch, A/B testing, consent management
-- **Analytics:** Sales drill-down, anomaly detection, funnel metrics, CRM dashboard
-- **AI Automation:** Category assignment, lead scoring, market intelligence stubs
-- **Notifications:** Alert center + audit log viewer (frontend)
-- **Cart:** Shopping cart with checkout flow (frontend)
+## Where things live
+- **Backend entry:** `backend/app/main.py` — registers all 22 routers
+- **DB models:** `backend/app/models.py` (core) + `backend/app/models_extended.py` (6 feature tables)
+- **Services:** `backend/app/services/` (~50 service files)
+- **Routers:** `backend/app/routers/` (21 files) + `backend/app/auth/router.py`
+- **Seed data:** `backend/app/routers/seed.py` → `POST /api/v1/seed-all`
+- **Frontend pages:** `frontend/app/**/page.tsx`
+- **Frontend components:** `frontend/components/`
+- **Next.js proxy:** `frontend/next.config.js` rewrites `/api/*` → `http://localhost:8000/api/*`
 
-## Database
-- **Dev:** SQLite (`backend/dev.db`)
-- **Prod:** PostgreSQL (via `DATABASE_URL` env var)
-- **Migrations:** 34+ Alembic migrations in `backend/alembic/versions/`
-- **Seed state:** 15 vendors, 15 products, 5 orders, 3 payment gateways, 10 leads, 2 users
+## Architecture decisions
+- **No Redis / Celery** — background tasks use an in-process thread pool (3 workers) + periodic scheduler in `task_runner.py`
+- **Vendor dedup** — normalized name matching in `crud.create_vendor` prevents duplicates on ingest
+- **Payment abstraction** — `payment_gateway.py` wraps Stripe / Razorpay / Mock behind a single interface; falls back to mock when keys absent
+- **Email fallback** — `email_service.py` tries SendGrid → SMTP → console print; never crashes on missing config
+- **Feature tables** — `models_extended.py` must be imported before `init_db()` runs so `create_all` picks them up (fixed in `database.py`)
+- **Seed-all endpoint** — `POST /api/v1/seed-all` is idempotent (deduplicates vendors/products/leads) and populates all 8 data domains in one call
 
-## Auth System
-- **File:** `backend/app/auth/` (utils.py, router.py, schemas.py, user_model.py)
-- **User model:** `users` table — id, email, hashed_password, full_name, role, is_active
-- **JWT:** HS256, 24h expiry, configurable via `JWT_SECRET_KEY` env var
-- **Roles:** admin, sales_rep, customer, vendor
+## Product
+**16 frontend pages:**
+| Page | Path | Description |
+|------|------|-------------|
+| Dashboard | `/` | KPI cards (vendors, products, leads, orders, RFQs), lead funnel chart |
+| Vendors | `/vendors` | Vendor list + add form |
+| Products | `/products` | Product catalog + add form |
+| CRM / Leads | `/crm` | Lead management with stage updates |
+| Orders | `/orders` | B2C orders tracking |
+| Cart | `/cart` | Shopping cart + checkout flow |
+| Payments | `/payments` | Gateway selection + intent creation |
+| Notifications | `/notifications` | Alerts + audit log viewer |
+| RFQ | `/rfq` | RFQ broadcasts + create |
+| RFQ Templates | `/rfq/templates` | Bulk RFQ templates: create, add products, reuse |
+| Analytics | `/analytics` | Funnel bar chart + pipeline trend |
+| Price Trends | `/price-trends` | Historical price tracking, benchmarks, seed button |
+| Suppliers | `/suppliers` | Scorecard (A/B/C grades) + smart vendor recommendations |
+| Cost Optimizer | `/cost-optimization` | Opportunities, spend analyzer, volume discount tiers |
+| Invoices | `/invoices` | Invoice list, create, send, mark paid |
+| Login | `/login` | Auth (login + register toggle) |
 
-## Services (`backend/app/services/`)
-| Service | File | Purpose |
-|---------|------|---------|
-| Payment Gateway | `payment_gateway.py` | Stripe/Razorpay/Mock — intent, confirm, refund, webhook |
-| Email Service | `email_service.py` | SMTP/SendGrid/Console — welcome, order, vendor notifications |
-| Task Runner | `task_runner.py` | Thread-pool (3 workers) + periodic scheduler |
-| B2C Commerce | `b2c_commerce.py` | Cart, checkout, payment gateway management |
-| Orders | `orders.py` | B2C order creation with dedup and tracking |
-| Order Shipping | `order_shipping.py` | Shipment create + status sync |
-| Order Feedback | `order_feedback.py` | Deal feedback recording |
-| Enrichment | `enrichment_service.py` | CSV-based B2B/B2C data enrichment |
+**22 API router groups:**
+`auth`, `vendors`, `products`, `leads`, `orders/b2c`, `rfq`, `crm`, `analytics`, `marketing`, `compliance`, `monitoring`, `operations`, `enrichment`, `cart`, `messages`, `escalations`, `market-intelligence`, `automation`, `i18n`, `integrations`, `payments`, `tasks`, `analytics-extended` (price-trends + supplier-scoring + cost-optimization), `invoices`, `rfq-templates`, `vendor-recommendations`, `seed-all`
 
-## API Routers (20 total)
-- `/api/v1/auth` — register, login, me
-- `/api/v1/vendors` — vendor CRUD + enrichment
-- `/api/v1/products` — product CRUD
-- `/api/v1/leads` — CRM lead management
-- `/api/v1/orders/b2c` — B2C commerce + shipping + payment intents
-- `/api/v1/rfq` — RFQ broadcasts + quote comparison
-- `/api/v1/crm` — funnel, dashboard, communications
-- `/api/v1/analytics` — sales, marketing, anomaly detection
-- `/api/v1/marketing` — campaigns, A/B tests
-- `/api/v1/compliance` — GDPR, consent
-- `/api/v1/monitoring` — alerts, audit logs, system health
-- `/api/v1/operations` — pricing, approvals
-- `/api/v1/enrichment` — vendor/product enrichment
-- `/api/v1/cart` — B2C cart
-- `/api/v1/messages` — message templates
-- `/api/v1/escalations` — escalation rules
-- `/api/v1/market-intelligence` — signals, opportunities
-- `/api/v1/automation` — AI automation stubs
-- `/api/v1/i18n` — internationalization
-- `/api/v1/integrations` — external integrations
-- `/api/v1/payments` — payment gateway CRUD (new)
-- `/api/v1/tasks` — background task monitoring (new)
+**Seed data (via `POST /api/v1/seed-all`):**
+- 15 vendors (across Electronics, Manufacturing, Raw Materials, Logistics, Software, Chemicals, Packaging, Services)
+- 15 products with SKU and category
+- 10 leads across all funnel stages
+- 270 price history records → benchmarks for all 9 categories
+- 15 supplier scores (quality/reliability/price/communication/compliance breakdown)
+- 72 volume discount tiers (3-tier per vendor/category pair)
+- 6 cost-saving opportunities (bulk discount, alt vendor, consolidation)
+- 10 sample invoices (mix of draft/sent/paid, with vendor names and line items)
 
-## Frontend Pages
-- `/` — Dashboard (KPI cards, funnel chart, quick links)
-- `/vendors` — Vendor list + add form
-- `/products` — Product catalog + add form
-- `/crm` — Lead management with stage updates
-- `/orders` — B2C orders tracking
-- `/cart` — Shopping cart + checkout flow
-- `/payments` — Payment gateway selection + intent creation
-- `/notifications` — Alerts + audit log viewer
-- `/rfq` — RFQ broadcasts + create
-- `/rfq/templates` — Bulk RFQ templates: create, add products, reuse patterns
-- `/analytics` — Charts (funnel bar, pipeline trend)
-- `/price-trends` — Historical price tracking, benchmarks, record price data
-- `/suppliers` — Supplier scorecard (ratings/grades) + smart vendor recommendations
-- `/cost-optimization` — Opportunities, spend analyzer, volume discount tiers
-- `/invoices` — Invoice list with status filters (draft/sent/paid)
-- `/login` — Auth (login + register toggle)
+## User preferences
+- Everything should be documented and updated in replit.md
+- All 6 extended features (Price Trends, Supplier Scoring, Invoice Management, Bulk RFQ Templates, Smart Vendor Recommendations, Cost Optimization) must work end-to-end with no errors
+- Seed buttons on each feature page so data is visible immediately without manual entry
 
-## Email Triggers (automatic)
-1. **User registers** → welcome email
-2. **RFQ broadcast created** → vendor notification emails (all vendors in DB)
-3. **B2C order created** → order confirmation email (if `shipping_address.email` provided)
+## Gotchas
+- `GET /api/v1/vendors` returns a **plain list** (not `{vendors: [...]}`) — frontend must handle both: `Array.isArray(d) ? d : (d.vendors || [])`
+- `models_extended.py` **must** be imported in `database.py` `init_db()` before `create_all()` or feature tables won't be created
+- RFQ templates API uses **query params** not JSON body — FastAPI simple params, not Pydantic body models
+- Price trend routes: `benchmark/{category}` must come before `{category}` in the router or FastAPI will try to match "benchmark" as a category ID
+- Vendor `category` field is set by the categorization engine — `crud.create_vendor` doesn't set it; seed.py patches it manually after creation
+- `Lead` model uses `full_name` (not `contact_name`) and `lead_score` (not `score`)
+- All new seed endpoints are idempotent (skip if already seeded)
 
-## Payment Gateway Flow
-1. `POST /api/v1/payments/intent` — create PaymentTransaction (status: created)
-2. `POST /api/v1/payments/{id}/confirm` — confirm payment (status: confirmed, sets paid_at)
-3. `POST /api/v1/payments/{id}/refund` — full or partial refund (status: refunded)
-4. `GET /api/v1/payments/gateways` — list configured gateways (mock, stripe, razorpay)
-5. Webhooks: `POST /api/v1/payments/webhook/stripe` and `/webhook/razorpay`
-
-## RFQ Workflow
-- **Step 1:** Enter product details (name, qty, target price, deadline, notes)
-- **Step 2:** Smart vendor ranking by category fit, name relevance, quote history
-- **Step 3:** Broadcast → vendor notification emails sent automatically
-- **Quotes View:** Side-by-side comparison sorted by price, lead time, response speed
-
-## Deployment
-- **Target:** Autoscale
-- **Backend command:** `gunicorn --bind=0.0.0.0:5000 -k uvicorn.workers.UvicornWorker app.main:app`
-- **Build:** `cd backend && pip install -r requirements.txt`
-
-## Environment Variables
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `DATABASE_URL` | PostgreSQL URL for production | SQLite dev.db |
-| `JWT_SECRET_KEY` | JWT signing secret | dev-key (change in prod!) |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT expiry | 1440 (24h) |
-| `STRIPE_SECRET_KEY` | Real Stripe integration | mock fallback |
-| `RAZORPAY_KEY_ID` | Real Razorpay integration | mock fallback |
-| `RAZORPAY_KEY_SECRET` | Real Razorpay integration | mock fallback |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook validation | skip validation |
-| `SENDGRID_API_KEY` | Real SendGrid emails | console fallback |
-| `SMTP_HOST` | SMTP email server | console fallback |
-| `SMTP_PORT` | SMTP port | 587 |
-| `SMTP_USER` | SMTP username | — |
-| `SMTP_PASS` | SMTP password | — |
-| `EMAIL_FROM` | From address for emails | noreply@procurement.ai |
-| `DEFAULT_PAYMENT_GATEWAY` | Default gateway | stripe |
-| `BACKEND_URL` | Backend URL for Next.js | http://localhost:8000 |
-
-## Extended Models (models_extended.py)
-All tables auto-created on startup via `init_db()`:
-- `price_history`, `price_benchmarks` — Price trend analytics
-- `supplier_scores`, `supplier_rating_history` — Supplier scoring
-- `invoices`, `invoice_items` — Invoice management
-- `rfq_templates`, `rfq_template_items` — Bulk RFQ templates
-- `vendor_rankings` — ML-based vendor recommendations
-- `cost_opportunities`, `discount_tiers` — Cost optimization
-
-## Bug Fixes Applied
-- Route ordering fix in orders.py (feedback/summary before /{order_id}/feedback)
-- Replaced deprecated `@app.on_event('startup')` with `asynccontextmanager` lifespan
-- Added indexes to Lead.email, Lead.stage, Lead.segment
-- Removed passlib dependency (bcrypt incompatibility) — use bcrypt directly
-- Enrichment CSVs present in `data/enrichment/`
-- Fixed payment_gateway.py: `confirmed_at` → `paid_at`, removed invalid `order.payment_status`
-- Fixed log_audit() call signature in payment_gateway.py
-- Removed duplicate /security/ alias endpoints from monitoring.py and analytics.py
-- Fixed models_extended.py not imported in init_db() — all 6 feature tables now created
-- Fixed RFQ templates page: added useEffect mount call + changed JSON body → query params
-- Upgraded Next.js from 14.2.3 to 16.2.4 (security patches)
+## Pointers
+- Backend Swagger UI: `http://localhost:8000/docs`
+- Extended models: `backend/app/models_extended.py`
+- Seed router: `backend/app/routers/seed.py`
+- Analytics + supplier + cost router: `backend/app/routers/analytics_extended.py`
+- Invoice router: `backend/app/routers/invoices.py`
+- Price trends service: `backend/app/services/price_trends.py`
+- Supplier scoring service: `backend/app/services/supplier_scoring.py`
+- Cost optimization service: `backend/app/services/cost_optimization.py`

@@ -36,6 +36,8 @@ function RFQTemplatesPage() {
     });
     const [showForm, setShowForm] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [creating, setCreating] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [seeding, setSeeding] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [seedMsg, setSeedMsg] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])('');
     const [selectedTemplate, setSelectedTemplate] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const [addingItem, setAddingItem] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [itemForm, setItemForm] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])({
@@ -61,6 +63,25 @@ function RFQTemplatesPage() {
     }, [
         loadTemplates
     ]);
+    async function seedTemplates() {
+        setSeeding(true);
+        setSeedMsg('');
+        try {
+            const res = await fetch('/api/v1/seed-all', {
+                method: 'POST'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const n = data.rfq_templates?.created ?? 0;
+                setSeedMsg(n > 0 ? `${n} sample templates seeded!` : 'Templates already seeded.');
+                loadTemplates();
+            }
+        } catch  {
+            setSeedMsg('Seed failed.');
+        } finally{
+            setSeeding(false);
+        }
+    }
     async function createTemplate() {
         if (!newTemplate.name || !newTemplate.category) return;
         setCreating(true);
@@ -139,14 +160,14 @@ function RFQTemplatesPage() {
                                         className: "text-indigo-400"
                                     }, void 0, false, {
                                         fileName: "[project]/app/rfq/templates/page.tsx",
-                                        lineNumber: 103,
+                                        lineNumber: 120,
                                         columnNumber: 13
                                     }, this),
                                     " RFQ Templates"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 102,
+                                lineNumber: 119,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -154,13 +175,13 @@ function RFQTemplatesPage() {
                                 children: "Save and reuse RFQ patterns for bulk multi-product sourcing"
                             }, void 0, false, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 105,
+                                lineNumber: 122,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/rfq/templates/page.tsx",
-                        lineNumber: 101,
+                        lineNumber: 118,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -171,20 +192,20 @@ function RFQTemplatesPage() {
                                 size: 14
                             }, void 0, false, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 111,
+                                lineNumber: 128,
                                 columnNumber: 11
                             }, this),
                             " New Template"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/rfq/templates/page.tsx",
-                        lineNumber: 107,
+                        lineNumber: 124,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/rfq/templates/page.tsx",
-                lineNumber: 100,
+                lineNumber: 117,
                 columnNumber: 7
             }, this),
             showForm && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -195,7 +216,7 @@ function RFQTemplatesPage() {
                         children: "Create Template"
                     }, void 0, false, {
                         fileName: "[project]/app/rfq/templates/page.tsx",
-                        lineNumber: 117,
+                        lineNumber: 134,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -212,7 +233,7 @@ function RFQTemplatesPage() {
                                 className: "bg-[#0f1419] border border-[#2a3540] rounded px-3 py-2 text-white text-sm"
                             }, void 0, false, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 119,
+                                lineNumber: 136,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -226,18 +247,18 @@ function RFQTemplatesPage() {
                                         children: c
                                     }, c, false, {
                                         fileName: "[project]/app/rfq/templates/page.tsx",
-                                        lineNumber: 131,
+                                        lineNumber: 148,
                                         columnNumber: 38
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 126,
+                                lineNumber: 143,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/rfq/templates/page.tsx",
-                        lineNumber: 118,
+                        lineNumber: 135,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -251,7 +272,7 @@ function RFQTemplatesPage() {
                         className: "w-full bg-[#0f1419] border border-[#2a3540] rounded px-3 py-2 text-white text-sm"
                     }, void 0, false, {
                         fileName: "[project]/app/rfq/templates/page.tsx",
-                        lineNumber: 134,
+                        lineNumber: 151,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -267,14 +288,14 @@ function RFQTemplatesPage() {
                                         className: "animate-spin"
                                     }, void 0, false, {
                                         fileName: "[project]/app/rfq/templates/page.tsx",
-                                        lineNumber: 147,
+                                        lineNumber: 164,
                                         columnNumber: 28
                                     }, this),
                                     " Create Template"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 142,
+                                lineNumber: 159,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -283,19 +304,19 @@ function RFQTemplatesPage() {
                                 children: "Cancel"
                             }, void 0, false, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 149,
+                                lineNumber: 166,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/rfq/templates/page.tsx",
-                        lineNumber: 141,
+                        lineNumber: 158,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/rfq/templates/page.tsx",
-                lineNumber: 116,
+                lineNumber: 133,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -312,7 +333,7 @@ function RFQTemplatesPage() {
                                         children: "Templates"
                                     }, void 0, false, {
                                         fileName: "[project]/app/rfq/templates/page.tsx",
-                                        lineNumber: 162,
+                                        lineNumber: 179,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -322,18 +343,18 @@ function RFQTemplatesPage() {
                                             size: 12
                                         }, void 0, false, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 164,
+                                            lineNumber: 181,
                                             columnNumber: 15
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/rfq/templates/page.tsx",
-                                        lineNumber: 163,
+                                        lineNumber: 180,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 161,
+                                lineNumber: 178,
                                 columnNumber: 11
                             }, this),
                             loading ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -341,7 +362,7 @@ function RFQTemplatesPage() {
                                 children: "Loading..."
                             }, void 0, false, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 168,
+                                lineNumber: 185,
                                 columnNumber: 13
                             }, this) : templates.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "bg-[#1a232e] border border-[#2a3540] rounded-lg p-4 text-center",
@@ -350,12 +371,12 @@ function RFQTemplatesPage() {
                                     children: "No templates yet. Create one above!"
                                 }, void 0, false, {
                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                    lineNumber: 171,
+                                    lineNumber: 188,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                lineNumber: 170,
+                                lineNumber: 187,
                                 columnNumber: 13
                             }, this) : templates.map((template)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                     onClick: ()=>loadTemplateDetail(template.template_id),
@@ -370,7 +391,7 @@ function RFQTemplatesPage() {
                                                         children: template.name
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/rfq/templates/page.tsx",
-                                                        lineNumber: 184,
+                                                        lineNumber: 201,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -378,13 +399,13 @@ function RFQTemplatesPage() {
                                                         children: template.category
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/rfq/templates/page.tsx",
-                                                        lineNumber: 185,
+                                                        lineNumber: 202,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                                lineNumber: 183,
+                                                lineNumber: 200,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -395,24 +416,24 @@ function RFQTemplatesPage() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/rfq/templates/page.tsx",
-                                                lineNumber: 187,
+                                                lineNumber: 204,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/rfq/templates/page.tsx",
-                                        lineNumber: 182,
+                                        lineNumber: 199,
                                         columnNumber: 17
                                     }, this)
                                 }, template.template_id, false, {
                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                    lineNumber: 175,
+                                    lineNumber: 192,
                                     columnNumber: 15
                                 }, this))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/rfq/templates/page.tsx",
-                        lineNumber: 160,
+                        lineNumber: 177,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -427,7 +448,7 @@ function RFQTemplatesPage() {
                                             children: selectedTemplate.name
                                         }, void 0, false, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 198,
+                                            lineNumber: 215,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -438,13 +459,13 @@ function RFQTemplatesPage() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 199,
+                                            lineNumber: 216,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                    lineNumber: 197,
+                                    lineNumber: 214,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -454,7 +475,7 @@ function RFQTemplatesPage() {
                                             children: "Products in Template"
                                         }, void 0, false, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 203,
+                                            lineNumber: 220,
                                             columnNumber: 17
                                         }, this),
                                         selectedTemplate.items.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -462,7 +483,7 @@ function RFQTemplatesPage() {
                                             children: "No items added yet."
                                         }, void 0, false, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 205,
+                                            lineNumber: 222,
                                             columnNumber: 19
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "space-y-1",
@@ -477,7 +498,7 @@ function RFQTemplatesPage() {
                                                                     className: "text-indigo-400"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                                    lineNumber: 211,
+                                                                    lineNumber: 228,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -485,13 +506,13 @@ function RFQTemplatesPage() {
                                                                     children: item.product
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                                    lineNumber: 212,
+                                                                    lineNumber: 229,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                                            lineNumber: 210,
+                                                            lineNumber: 227,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -504,7 +525,7 @@ function RFQTemplatesPage() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                                    lineNumber: 215,
+                                                                    lineNumber: 232,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 item.target_price != null && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -515,7 +536,7 @@ function RFQTemplatesPage() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                                    lineNumber: 216,
+                                                                    lineNumber: 233,
                                                                     columnNumber: 57
                                                                 }, this),
                                                                 item.lead_time_days != null && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -525,30 +546,30 @@ function RFQTemplatesPage() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                                    lineNumber: 217,
+                                                                    lineNumber: 234,
                                                                     columnNumber: 59
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                                            lineNumber: 214,
+                                                            lineNumber: 231,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, i, true, {
                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                    lineNumber: 209,
+                                                    lineNumber: 226,
                                                     columnNumber: 23
                                                 }, this))
                                         }, void 0, false, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 207,
+                                            lineNumber: 224,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                    lineNumber: 202,
+                                    lineNumber: 219,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -559,7 +580,7 @@ function RFQTemplatesPage() {
                                             children: "Add Product"
                                         }, void 0, false, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 226,
+                                            lineNumber: 243,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -576,7 +597,7 @@ function RFQTemplatesPage() {
                                                     className: "bg-[#0f1419] border border-[#2a3540] rounded px-3 py-2 text-white text-xs"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                    lineNumber: 228,
+                                                    lineNumber: 245,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -590,7 +611,7 @@ function RFQTemplatesPage() {
                                                     className: "bg-[#0f1419] border border-[#2a3540] rounded px-3 py-2 text-white text-xs"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                    lineNumber: 235,
+                                                    lineNumber: 252,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -604,7 +625,7 @@ function RFQTemplatesPage() {
                                                     className: "bg-[#0f1419] border border-[#2a3540] rounded px-3 py-2 text-white text-xs"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                    lineNumber: 242,
+                                                    lineNumber: 259,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -618,13 +639,13 @@ function RFQTemplatesPage() {
                                                     className: "bg-[#0f1419] border border-[#2a3540] rounded px-3 py-2 text-white text-xs"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                    lineNumber: 249,
+                                                    lineNumber: 266,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 227,
+                                            lineNumber: 244,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -637,33 +658,33 @@ function RFQTemplatesPage() {
                                                     className: "animate-spin"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                    lineNumber: 262,
+                                                    lineNumber: 279,
                                                     columnNumber: 34
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
                                                     size: 12
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                                    lineNumber: 263,
+                                                    lineNumber: 280,
                                                     columnNumber: 19
                                                 }, this),
                                                 " Add Product to Template"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/rfq/templates/page.tsx",
-                                            lineNumber: 257,
+                                            lineNumber: 274,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                    lineNumber: 225,
+                                    lineNumber: 242,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/rfq/templates/page.tsx",
-                            lineNumber: 196,
+                            lineNumber: 213,
                             columnNumber: 13
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "bg-[#1a232e] border border-[#2a3540] rounded-lg p-8 text-center h-full flex flex-col items-center justify-center min-h-48",
@@ -673,7 +694,7 @@ function RFQTemplatesPage() {
                                     className: "text-[#4a5c6a] mb-3"
                                 }, void 0, false, {
                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                    lineNumber: 269,
+                                    lineNumber: 286,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -681,30 +702,30 @@ function RFQTemplatesPage() {
                                     children: "Select a template to view and manage its products"
                                 }, void 0, false, {
                                     fileName: "[project]/app/rfq/templates/page.tsx",
-                                    lineNumber: 270,
+                                    lineNumber: 287,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/rfq/templates/page.tsx",
-                            lineNumber: 268,
+                            lineNumber: 285,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/rfq/templates/page.tsx",
-                        lineNumber: 194,
+                        lineNumber: 211,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/rfq/templates/page.tsx",
-                lineNumber: 159,
+                lineNumber: 176,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/rfq/templates/page.tsx",
-        lineNumber: 99,
+        lineNumber: 116,
         columnNumber: 5
     }, this);
 }

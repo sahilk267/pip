@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { TrendingUp, RefreshCw, BarChart3 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { TrendingUp, RefreshCw, BarChart3, Database } from 'lucide-react';
 import { PriceTrendsChart } from '@/components/PriceTrendsChart';
 
 const COMMON_CATEGORIES = [
@@ -11,9 +11,11 @@ const COMMON_CATEGORIES = [
 
 export default function PriceTrendsPage() {
   const [selectedCategory, setSelectedCategory] = useState('Electronics');
-  const [categories, setCategories] = useState<string[]>(COMMON_CATEGORIES);
   const [recording, setRecording] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState('');
   const [vendors, setVendors] = useState<any[]>([]);
+  const [chartKey, setChartKey] = useState(0);
   const [form, setForm] = useState({
     vendor_id: '',
     product_name: '',
@@ -25,9 +27,28 @@ export default function PriceTrendsPage() {
   useEffect(() => {
     fetch('/api/v1/vendors')
       .then((r) => r.json())
-      .then((d) => setVendors(d.vendors || []))
+      .then((d) => setVendors(Array.isArray(d) ? d : (d.vendors || [])))
       .catch(() => {});
   }, []);
+
+  async function seedData() {
+    setSeeding(true);
+    setSeedMsg('');
+    try {
+      const res = await fetch('/api/v1/analytics/price-trends/seed', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setSeedMsg(`Seeded ${data.records_created} price records across ${data.vendors_used} vendors and ${data.benchmarks_updated?.length ?? 0} categories.`);
+        setChartKey((k) => k + 1);
+      } else {
+        setSeedMsg('Seed failed — check backend logs.');
+      }
+    } catch {
+      setSeedMsg('Error connecting to server.');
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   async function recordPrice() {
     if (!form.vendor_id || !form.product_name || !form.unit_price) return;
@@ -45,6 +66,7 @@ export default function PriceTrendsPage() {
       if (res.ok) {
         setRecordMsg('Price recorded successfully!');
         setSelectedCategory(form.category);
+        setChartKey((k) => k + 1);
         setForm({ ...form, product_name: '', unit_price: '' });
       } else {
         setRecordMsg('Failed to record price.');
@@ -58,18 +80,34 @@ export default function PriceTrendsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <TrendingUp size={20} className="text-cyan-400" /> Price Trend Analytics
-        </h1>
-        <p className="text-sm text-[#9aacbc] mt-0.5">Historical price tracking and supplier benchmarking by category</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <TrendingUp size={20} className="text-cyan-400" /> Price Trend Analytics
+          </h1>
+          <p className="text-sm text-[#9aacbc] mt-0.5">Historical price tracking and supplier benchmarking by category</p>
+        </div>
+        <button
+          onClick={seedData}
+          disabled={seeding}
+          className="flex items-center gap-2 px-4 py-2 bg-[#1a232e] border border-cyan-600/50 hover:border-cyan-500 text-cyan-400 text-xs rounded transition-colors disabled:opacity-50"
+        >
+          {seeding ? <RefreshCw size={13} className="animate-spin" /> : <Database size={13} />}
+          {seeding ? 'Seeding...' : 'Seed Sample Data'}
+        </button>
       </div>
+
+      {seedMsg && (
+        <div className={`text-xs px-4 py-2 rounded border ${seedMsg.includes('Seeded') ? 'bg-emerald-900/20 border-emerald-700/40 text-emerald-400' : 'bg-red-900/20 border-red-700/40 text-red-400'}`}>
+          {seedMsg}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-5">
           {/* Category selector */}
           <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
+            {COMMON_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -84,7 +122,7 @@ export default function PriceTrendsPage() {
             ))}
           </div>
 
-          <PriceTrendsChart category={selectedCategory} />
+          <PriceTrendsChart key={chartKey} category={selectedCategory} />
         </div>
 
         <div className="col-span-1 space-y-4">
@@ -143,9 +181,10 @@ export default function PriceTrendsPage() {
           <div className="bg-[#1a232e] border border-[#2a3540] rounded-lg p-4">
             <h3 className="text-sm font-semibold text-white mb-3">How It Works</h3>
             <div className="space-y-2 text-xs text-[#9aacbc]">
-              <p>• Select a category to view its price trends</p>
+              <p>• Click <strong className="text-cyan-400">Seed Sample Data</strong> to populate historical prices for all vendors</p>
+              <p>• Select a category to view its price trends and benchmarks</p>
               <p>• Price benchmarks show min/avg/max across all vendors</p>
-              <p>• Record new price data points manually</p>
+              <p>• Record new price data points manually above</p>
               <p>• Prices are auto-recorded when RFQ quotes arrive</p>
               <p>• Trends show if prices are increasing or decreasing</p>
             </div>

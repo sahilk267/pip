@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Award, Star, RefreshCw, Zap } from 'lucide-react';
+import { Award, Star, RefreshCw, Zap, Database } from 'lucide-react';
 import { SupplierScorecard } from '@/components/SupplierScorecard';
 
 const CATEGORIES = ['Electronics', 'Manufacturing', 'Raw Materials', 'Logistics', 'Software', 'Services', 'Chemicals', 'Packaging'];
@@ -22,6 +22,9 @@ export default function SuppliersPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [recLoading, setRecLoading] = useState(false);
   const [ranking, setRanking] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState('');
+  const [scorecardKey, setScorecardKey] = useState(0);
 
   useEffect(() => {
     async function loadVendors() {
@@ -29,9 +32,10 @@ export default function SuppliersPage() {
         const res = await fetch('/api/v1/vendors');
         if (res.ok) {
           const data = await res.json();
-          setVendors(data.vendors?.slice(0, 20) || []);
-          if (data.vendors && data.vendors.length > 0) {
-            setSelectedVendor(data.vendors[0].id);
+          const list = Array.isArray(data) ? data : (data.vendors || []);
+          setVendors(list.slice(0, 20));
+          if (list.length > 0) {
+            setSelectedVendor(list[0].id);
           }
         }
       } catch {}
@@ -39,6 +43,25 @@ export default function SuppliersPage() {
     }
     loadVendors();
   }, []);
+
+  async function seedScores() {
+    setSeeding(true);
+    setSeedMsg('');
+    try {
+      const res = await fetch('/api/v1/suppliers/seed-scores', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setSeedMsg(`Scored ${data.scored} vendors successfully.`);
+        setScorecardKey((k) => k + 1);
+      } else {
+        setSeedMsg('Failed to seed scores.');
+      }
+    } catch {
+      setSeedMsg('Error connecting to server.');
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   async function loadRecommendations(category: string) {
     setRecLoading(true);
@@ -79,7 +102,17 @@ export default function SuppliersPage() {
           </h1>
           <p className="text-sm text-[#9aacbc] mt-0.5">Performance ratings, reliability metrics & smart recommendations</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {activeTab === 'scorecard' && (
+            <button
+              onClick={seedScores}
+              disabled={seeding}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a232e] border border-purple-600/50 hover:border-purple-500 text-purple-400 text-xs rounded transition-colors disabled:opacity-50"
+            >
+              {seeding ? <RefreshCw size={12} className="animate-spin" /> : <Database size={12} />}
+              {seeding ? 'Scoring...' : 'Seed All Scores'}
+            </button>
+          )}
           {(['scorecard', 'recommendations'] as const).map((tab) => (
             <button
               key={tab}
@@ -94,31 +127,41 @@ export default function SuppliersPage() {
         </div>
       </div>
 
+      {seedMsg && (
+        <div className={`text-xs px-4 py-2 rounded border ${seedMsg.includes('successfully') ? 'bg-emerald-900/20 border-emerald-700/40 text-emerald-400' : 'bg-red-900/20 border-red-700/40 text-red-400'}`}>
+          {seedMsg}
+        </div>
+      )}
+
       {activeTab === 'scorecard' && (
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1 bg-[#1a232e] border border-[#2a3540] rounded-lg p-4 max-h-[520px] overflow-y-auto">
             <h3 className="text-sm font-semibold text-white mb-3">Vendors</h3>
-            <div className="space-y-2">
-              {vendors.map((vendor) => (
-                <button
-                  key={vendor.id}
-                  onClick={() => setSelectedVendor(vendor.id)}
-                  className={`w-full text-left p-2 rounded transition-colors text-xs ${
-                    selectedVendor === vendor.id
-                      ? 'bg-purple-600/20 border border-purple-600 text-white'
-                      : 'bg-[#0f1419] border border-[#2a3540] text-[#9aacbc] hover:border-purple-600'
-                  }`}
-                >
-                  <p className="font-medium">{vendor.name}</p>
-                  <p className="text-[10px] text-[#4a5c6a]">{vendor.country}</p>
-                </button>
-              ))}
-            </div>
+            {vendors.length === 0 ? (
+              <p className="text-xs text-[#9aacbc]">No vendors found. Add vendors first.</p>
+            ) : (
+              <div className="space-y-2">
+                {vendors.map((vendor) => (
+                  <button
+                    key={vendor.id}
+                    onClick={() => setSelectedVendor(vendor.id)}
+                    className={`w-full text-left p-2 rounded transition-colors text-xs ${
+                      selectedVendor === vendor.id
+                        ? 'bg-purple-600/20 border border-purple-600 text-white'
+                        : 'bg-[#0f1419] border border-[#2a3540] text-[#9aacbc] hover:border-purple-600'
+                    }`}
+                  >
+                    <p className="font-medium">{vendor.name}</p>
+                    <p className="text-[10px] text-[#4a5c6a]">{vendor.country || vendor.category}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {selectedVendor && (
             <div className="col-span-2">
-              <SupplierScorecard vendorId={selectedVendor} />
+              <SupplierScorecard key={scorecardKey} vendorId={selectedVendor} />
             </div>
           )}
         </div>
@@ -156,6 +199,7 @@ export default function SuppliersPage() {
             <div className="bg-[#1a232e] border border-[#2a3540] rounded-lg p-8 text-center">
               <Star size={32} className="text-[#4a5c6a] mx-auto mb-3" />
               <p className="text-sm text-[#9aacbc] mb-3">No rankings yet for <strong className="text-white">{recCategory}</strong>.</p>
+              <p className="text-xs text-[#4a5c6a] mb-4">Use <strong className="text-purple-400">Seed All Scores</strong> first, then rank.</p>
               <button
                 onClick={() => rankVendors(recCategory)}
                 disabled={ranking}
