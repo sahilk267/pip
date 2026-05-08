@@ -210,3 +210,35 @@ class DiscountTier(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     vendor = relationship('Vendor')
+
+
+# ─── RFQ EMAIL DIGEST ─────────────────────────────────────────────────────
+
+class RFQDigestConfig(Base):
+    """Configuration for weekly RFQ digest emails."""
+    __tablename__ = 'rfq_digest_config'
+
+    id = Column(Integer, primary_key=True, index=True)
+    recipient_emails = Column(JSON, server_default='[]')   # list[str]
+    schedule_day = Column(Integer, default=0)              # 0=Mon … 6=Sun
+    schedule_hour = Column(Integer, default=8)             # 0-23 UTC
+    window_days = Column(Integer, default=7)               # stats look-back window
+    is_active = Column(Boolean, default=True)
+    last_run_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class RFQDigestLog(Base):
+    """Audit log of every digest send attempt."""
+    __tablename__ = 'rfq_digest_log'
+
+    id = Column(Integer, primary_key=True, index=True)
+    triggered_by = Column(String(32), default='scheduler')   # 'scheduler' | 'manual'
+    recipients = Column(JSON, server_default='[]')
+    status = Column(String(16), default='pending')           # pending | success | partial | failed
+    sent_count = Column(Integer, default=0)
+    failed_count = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
+    stats_snapshot = Column(JSON, server_default='{}')       # KPI snapshot at send time
+    sent_at = Column(DateTime(timezone=True), server_default=func.now())

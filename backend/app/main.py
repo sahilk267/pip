@@ -35,6 +35,7 @@ from .routers.rfq_templates import router as rfq_templates_router
 from .routers.vendor_recommendations import router as vendor_recommendations_router
 from .routers.seed import router as seed_router
 from .routers.rfq_analytics import router as rfq_analytics_router
+from .routers.rfq_digest import router as rfq_digest_router
 from .services import task_runner
 
 _STATIC = Path(__file__).resolve().parent / 'static'
@@ -44,6 +45,9 @@ _STATIC = Path(__file__).resolve().parent / 'static'
 async def lifespan(app: FastAPI):
     init_db()
     task_runner.start_workers()
+    # Register weekly RFQ digest scheduler
+    from .services.rfq_digest import maybe_send_scheduled_digest
+    task_runner.schedule(maybe_send_scheduled_digest, interval_seconds=3600, name="rfq-digest-check")
     task_runner.start_scheduler()
     yield
     task_runner.stop_workers()
@@ -205,3 +209,4 @@ app.include_router(rfq_templates_router)
 app.include_router(vendor_recommendations_router)
 app.include_router(seed_router)
 app.include_router(rfq_analytics_router)
+app.include_router(rfq_digest_router)

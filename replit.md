@@ -53,6 +53,7 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 | RFQ | `/rfq` | RFQ broadcasts + create |
 | RFQ Templates | `/rfq/templates` | Bulk RFQ templates: create, add products, reuse |
 | RFQ Analytics | `/rfq/analytics` | Response rates, avg quote prices, vendor win rates per broadcast |
+| RFQ Digest | `/rfq/digest` | Weekly email digest config, recipients, schedule, history, preview |
 | Analytics | `/analytics` | Funnel bar chart + pipeline trend |
 | Price Trends | `/price-trends` | Historical price tracking, benchmarks, seed button |
 | Suppliers | `/suppliers` | Scorecard (A/B/C grades) + smart vendor recommendations |
@@ -95,6 +96,9 @@ AI-powered B2B+B2C commerce system for vendor discovery, RFQ, negotiation, CRM, 
 - Seed router: `backend/app/routers/seed.py`
 - Analytics + supplier + cost router: `backend/app/routers/analytics_extended.py`
 - RFQ analytics router: `backend/app/routers/rfq_analytics.py` → `GET /api/v1/rfq/analytics`
+- RFQ digest router: `backend/app/routers/rfq_digest.py` → `GET/POST /api/v1/rfq/digest/config`, `POST /api/v1/rfq/digest/send-now`, `GET /api/v1/rfq/digest/history`, `GET /api/v1/rfq/digest/preview`
+- RFQ digest service: `backend/app/services/rfq_digest.py` — stats computation, HTML/text email builder, scheduler hook
+- Digest DB tables: `rfq_digest_config` (single-row config), `rfq_digest_log` (send audit trail) in `models_extended.py`
 - Invoice router: `backend/app/routers/invoices.py`
 - Price trends service: `backend/app/services/price_trends.py`
 - Supplier scoring service: `backend/app/services/supplier_scoring.py`

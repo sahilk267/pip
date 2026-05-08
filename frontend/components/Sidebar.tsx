@@ -22,6 +22,7 @@ import {
   DollarSign,
   Copy,
   BarChart2,
+  Mail,
 } from 'lucide-react';
 
 const nav = [
@@ -33,6 +34,7 @@ const nav = [
   { href: '/rfq', label: 'RFQ', icon: FileText },
   { href: '/rfq/templates', label: 'RFQ Templates', icon: Copy },
   { href: '/rfq/analytics', label: 'RFQ Analytics', icon: BarChart2 },
+  { href: '/rfq/digest', label: 'RFQ Digest', icon: Mail },
   { href: '/cart', label: 'Cart', icon: ShoppingBag },
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },

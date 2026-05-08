@@ -1,3 +1,10 @@
 {
-  "/rfq/analytics/page": "app/rfq/analytics/page.js"
+  "/cost-optimization/page": "app/cost-optimization/page.js",
+  "/invoices/page": "app/invoices/page.js",
+  "/notifications/page": "app/notifications/page.js",
+  "/page": "app/page.js",
+  "/price-trends/page": "app/price-trends/page.js",
+  "/rfq/digest/page": "app/rfq/digest/page.js",
+  "/suppliers/page": "app/suppliers/page.js",
+  "/vendors/page": "app/vendors/page.js"
 }
