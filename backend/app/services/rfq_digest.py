@@ -2,18 +2,27 @@
 from __future__ import annotations
 
 import logging
+import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
 
-from ..models_extended import RFQDigestConfig, RFQDigestLog
+from ..models_extended import RFQDigestConfig, RFQDigestLog, RFQDigestUnsubscribe
 from .. import models
 from . import email_service
 
 logger = logging.getLogger(__name__)
 
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+# Base URL used to build unsubscribe links — override via APP_BASE_URL env var
+_APP_BASE_URL = os.getenv("APP_BASE_URL", "").rstrip("/")
+
+
+def _base_url() -> str:
+    return _APP_BASE_URL or "http://localhost:8000"
 
 
 # ─── Stats computation ────────────────────────────────────────────────────────
@@ -67,7 +76,7 @@ def _compute_stats(db: Session, window_days: int) -> dict[str, Any]:
                 best_rate = rate
                 top_broadcast = {"message": bc.message or f"RFQ-{bc.id:04d}", "rate": round(rate, 1)}
 
-    # Winning vendor (most quote wins)
+    # Winning vendor (most quote wins by lowest price)
     broadcast_quotes: dict[int, list] = {}
     for q in quotes:
         attempt = next((a for a in attempt_rows if a.id == q.attempt_id), None)
@@ -102,15 +111,73 @@ def _compute_stats(db: Session, window_days: int) -> dict[str, Any]:
     }
 
 
+# ─── Unsubscribe token helpers ────────────────────────────────────────────────
+
+def _generate_token() -> str:
+    return uuid.uuid4().hex
+
+
+def _create_unsubscribe_token(db: Session, email: str, log_id: int | None) -> str:
+    token = _generate_token()
+    record = RFQDigestUnsubscribe(
+        email=email,
+        token=token,
+        log_id=log_id,
+        used=False,
+    )
+    db.add(record)
+    db.commit()
+    return token
+
+
+def unsubscribe_by_token(db: Session, token: str) -> dict[str, Any]:
+    """Find the token, mark used, remove the email from the digest config."""
+    record = (
+        db.query(RFQDigestUnsubscribe)
+        .filter(RFQDigestUnsubscribe.token == token)
+        .first()
+    )
+    if not record:
+        return {"success": False, "reason": "invalid_token"}
+    if record.used:
+        return {"success": True, "already_used": True, "email": record.email}
+
+    # Mark token consumed
+    record.used = True
+    record.used_at = datetime.now(tz=timezone.utc)
+
+    # Remove email from config
+    cfg = db.query(RFQDigestConfig).first()
+    if cfg and cfg.recipient_emails:
+        updated = [e for e in cfg.recipient_emails if e.lower() != record.email.lower()]
+        cfg.recipient_emails = updated
+
+    db.commit()
+    logger.info("Unsubscribed %s via digest token", record.email)
+    return {"success": True, "email": record.email}
+
+
+def list_unsubscribe_tokens(db: Session, limit: int = 50) -> list[RFQDigestUnsubscribe]:
+    return (
+        db.query(RFQDigestUnsubscribe)
+        .order_by(RFQDigestUnsubscribe.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
 # ─── Email rendering ──────────────────────────────────────────────────────────
 
-def _html_email(stats: dict[str, Any], period_label: str) -> str:
+def _html_email(stats: dict[str, Any], period_label: str, unsubscribe_url: str = "") -> str:
     def kpi(label: str, value: str, color: str = "#4b9fff") -> str:
-        return f"""
-        <td style="text-align:center;padding:16px 12px;background:#1a232e;border-radius:8px;border:1px solid #2a3540;">
-          <div style="font-size:22px;font-weight:700;color:{color};">{value}</div>
-          <div style="font-size:11px;color:#9aacbc;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;">{label}</div>
-        </td>"""
+        return (
+            f'<td style="text-align:center;padding:16px 12px;background:#1a232e;'
+            f'border-radius:8px;border:1px solid #2a3540;">'
+            f'<div style="font-size:22px;font-weight:700;color:{color};">{value}</div>'
+            f'<div style="font-size:11px;color:#9aacbc;margin-top:4px;text-transform:uppercase;'
+            f'letter-spacing:.05em;">{label}</div>'
+            f'</td>'
+        )
 
     avg_price = f"${stats['avg_unit_price_usd']:,.2f}" if stats["avg_unit_price_usd"] else "—"
     avg_lead = f"{stats['avg_lead_time_days']}d" if stats["avg_lead_time_days"] else "—"
@@ -122,6 +189,14 @@ def _html_email(stats: dict[str, Any], period_label: str) -> str:
         f'</td></tr>'
     ) if top_bc else ""
     top_vendor = stats.get("top_winning_vendor") or "—"
+
+    unsub_section = ""
+    if unsubscribe_url:
+        unsub_section = (
+            f'<br/><a href="{unsubscribe_url}" '
+            f'style="color:#4a5c6a;font-size:10px;text-decoration:underline;">'
+            f'Unsubscribe from this digest</a>'
+        )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -163,7 +238,7 @@ def _html_email(stats: dict[str, Any], period_label: str) -> str:
         </table>
       </tr>
       <tr><td style="padding:12px 0 0;font-size:12px;color:#4a5c6a;">
-        {stats['vendors_reached']} vendors reached · {stats['total_responses']} responses · {stats['total_quotes']} quotes
+        {stats['vendors_reached']} vendors reached &middot; {stats['total_responses']} responses &middot; {stats['total_quotes']} quotes
       </td></tr>
     </table>
 
@@ -172,9 +247,9 @@ def _html_email(stats: dict[str, Any], period_label: str) -> str:
       <tr><td style="padding:0 0 12px;font-size:11px;color:#4a5c6a;text-transform:uppercase;letter-spacing:.08em;">Highlights</td></tr>
       {"<tr><td><table width='100%'>" + top_bc_html + "</table></td></tr>" if top_bc_html else ""}
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #1e2a34;">
+        <td style="padding:10px 0;">
           <span style="color:#9aacbc;font-size:13px;">Top winning vendor</span>
-          <span style="float:right;color:#f59e0b;font-weight:700;font-size:13px;">🏆 {top_vendor}</span>
+          <span style="float:right;color:#f59e0b;font-weight:700;font-size:13px;">&#127942; {top_vendor}</span>
         </td>
       </tr>
     </table>
@@ -183,8 +258,9 @@ def _html_email(stats: dict[str, Any], period_label: str) -> str:
     <table width="100%" style="background:#0f1419;border-radius:0 0 12px 12px;border:1px solid #2a3540;border-top:none;">
       <tr>
         <td style="padding:16px 28px;font-size:11px;color:#4a5c6a;text-align:center;">
-          Procurement Intelligence Platform · Weekly Digest<br/>
+          Procurement Intelligence Platform &middot; Weekly Digest<br/>
           Generated {datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
+          {unsub_section}
         </td>
       </tr>
     </table>
@@ -194,11 +270,12 @@ def _html_email(stats: dict[str, Any], period_label: str) -> str:
 </body></html>"""
 
 
-def _text_email(stats: dict[str, Any], period_label: str) -> str:
+def _text_email(stats: dict[str, Any], period_label: str, unsubscribe_url: str = "") -> str:
     avg_price = f"${stats['avg_unit_price_usd']:,.2f}" if stats["avg_unit_price_usd"] else "N/A"
     avg_lead = f"{stats['avg_lead_time_days']} days" if stats["avg_lead_time_days"] else "N/A"
     top_bc = stats.get("top_broadcast")
     top_bc_line = f"  Best broadcast: {top_bc['message']} ({top_bc['rate']}%)" if top_bc else ""
+    unsub_line = f"\nTo unsubscribe: {unsubscribe_url}" if unsubscribe_url else ""
 
     return f"""
 WEEKLY RFQ DIGEST — {period_label}
@@ -220,6 +297,7 @@ HIGHLIGHTS
   Top winning vendor: {stats.get("top_winning_vendor") or "N/A"}
 
 Generated: {datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
+{unsub_line}
 """.strip()
 
 
@@ -277,7 +355,7 @@ def list_logs(db: Session, limit: int = 20) -> list[RFQDigestLog]:
 # ─── Core send logic ──────────────────────────────────────────────────────────
 
 def send_digest(db: Session, triggered_by: str = "scheduler") -> dict[str, Any]:
-    """Compute stats, build email, send to all recipients, log result."""
+    """Compute stats, build per-recipient email with unsubscribe token, send, log result."""
     cfg = get_or_create_config(db)
     recipients = cfg.recipient_emails or []
 
@@ -288,9 +366,7 @@ def send_digest(db: Session, triggered_by: str = "scheduler") -> dict[str, Any]:
     period_label = f"{period_start} – {period_end}"
 
     stats = _compute_stats(db, window)
-    subject = f"📊 Weekly RFQ Digest — {period_label}"
-    html_body = _html_email(stats, period_label)
-    text_body = _text_email(stats, period_label)
+    subject = f"Weekly RFQ Digest — {period_label}"
 
     log = RFQDigestLog(
         triggered_by=triggered_by,
@@ -313,8 +389,17 @@ def send_digest(db: Session, triggered_by: str = "scheduler") -> dict[str, Any]:
         db.commit()
         return {"status": "failed", "reason": "no_recipients", "stats": stats}
 
+    base = _base_url()
+
     for recipient in recipients:
         try:
+            # Generate a unique unsubscribe token for this recipient + this send
+            token = _create_unsubscribe_token(db, recipient, log_id=log.id)
+            unsub_url = f"{base}/api/v1/rfq/digest/unsubscribe?token={token}"
+
+            html_body = _html_email(stats, period_label, unsubscribe_url=unsub_url)
+            text_body = _text_email(stats, period_label, unsubscribe_url=unsub_url)
+
             result = email_service.send_email(
                 to=recipient,
                 subject=subject,

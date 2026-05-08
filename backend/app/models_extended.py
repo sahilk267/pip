@@ -242,3 +242,16 @@ class RFQDigestLog(Base):
     error_message = Column(Text, nullable=True)
     stats_snapshot = Column(JSON, server_default='{}')       # KPI snapshot at send time
     sent_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class RFQDigestUnsubscribe(Base):
+    """Per-recipient unsubscribe tokens — one token per send per recipient."""
+    __tablename__ = 'rfq_digest_unsubscribe'
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(256), nullable=False, index=True)
+    token = Column(String(64), nullable=False, unique=True, index=True)
+    log_id = Column(Integer, ForeignKey('rfq_digest_log.id'), nullable=True)
+    used = Column(Boolean, default=False)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
